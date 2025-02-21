@@ -10,3 +10,6 @@
 [submodule "term"]
 	path = term
 	url = git@github.com:darranl/pico-term.git
+[submodule "flash"]
+	path = flash
+	url = git@github.com:darranl/pico-flash.git

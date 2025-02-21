@@ -31,6 +31,8 @@ Required components:
 This project uses the following Git repositories as sub modules to
 aggregate the required utilities.
 
+ = [pico-flash](https://github.com/darranl/pico-flash)
  = [pico-security](https://github.com/darranl/pico-security)
+ = [pico-term](https://github.com/darranl/pico-term)
  = [pico-util](https://github.com/darranl/pico-util)
  = [pico-vscode](https://github.com/darranl/pico-vscode)

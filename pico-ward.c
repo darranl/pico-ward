@@ -29,6 +29,29 @@
 #include "term/terminal_handler.h"
 #include "util/hexutil.h"
 
+
+// Status Register 1 Bit masks
+#define WB_STATUS_REGISTER_1_BUSY_MASK 0x01
+#define WB_STATUS_REGISTER_1_WEL_MASK 0x02
+#define WB_STATUS_REGISTER_1_BP0_MASK 0x04
+#define WB_STATUS_REGISTER_1_BP1_MASK 0x08
+#define WB_STATUS_REGISTER_1_BP2_MASK 0x10
+#define WB_STATUS_REGISTER_1_TB_MASK 0x20
+#define WB_STATUS_REGISTER_1_SEC_MASK 0x40
+#define WB_STATUS_REGISTER_1_SRP0_MASK 0x80
+// Status Register 2 Bit masks
+#define WB_STATUS_REGISTER_2_SRL_MASK 0x01
+#define WB_STATUS_REGISTER_2_QE_MASK 0x02
+#define WB_STATUS_REGISTER_2_LB1_MASK 0x08
+#define WB_STATUS_REGISTER_2_LB2_MASK 0x10
+#define WB_STATUS_REGISTER_2_LB3_MASK 0x20
+#define WB_STATUS_REGISTER_2_CMP_MASK 0x40
+#define WB_STATUS_REGISTER_2_SUS_MASK 0x80
+// Status Register 3 Bit masks
+#define WB_STATUS_REGISTER_3_WPS_MASK 0x04
+#define WB_STATUS_REGISTER_3_DRV0_MASK 0x20
+#define WB_STATUS_REGISTER_3_DRV1_MASK 0x40
+
 static void _configure_flash_context(flash_context_t *flash_context)
 {
     flash_context->spi = FLASH_SPI_BANK;
@@ -53,6 +76,46 @@ int main()
     _configure_flash_context(&flash_context);
     flash_spi_init(&flash_context);
     flash_reset(&flash_context);
+
+    flash_device_info_t device_info;
+    flash_load_device_info(&flash_context, &device_info);
+
+    // Release Power Down ID
+    printf("Release Power Down ID: 0x%02x\n", device_info.manufacturer_id);
+    // JDEC ID
+    printf("JDEC Manufacturer ID 0x%02x\n", device_info.jedec_id[0]);
+    printf("JDEC Memory Type 0x%02x\n", device_info.jedec_id[1]);
+    printf("JDEC Capacity 0x%02x\n", device_info.jedec_id[2]);
+    // Unique ID
+    printf("Unique ID: ");
+    for (int i = 0; i < 8; i++)
+    {
+        printf("%02x", device_info.unique_id[i]);
+    }
+    printf("\n");
+    // 3 Status Registers
+    printf("Status Register 1: BUSY: %d, WEL:  %d, BP0:  %d, BP1:  %d, BP2:  %d, TB:   %d, SEC:  %d, SRP0: %d\n",
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BUSY_MASK) >> 0,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_WEL_MASK) >> 1,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BP0_MASK) >> 2,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BP1_MASK) >> 3,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BP2_MASK) >> 4,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_TB_MASK) >> 5,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_SEC_MASK) >> 6,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_SRP0_MASK) >> 7);
+    printf("Status Register 2: SRL:  %d, QE:   %d, LB1:  %d, LB2:  %d, LB3:  %d, CMP:  %d, SUS:  %d\n",
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_SRL_MASK) >> 0,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_QE_MASK) >> 1,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_LB1_MASK) >> 3,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_LB2_MASK) >> 4,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_LB3_MASK) >> 5,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_CMP_MASK) >> 6,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_SUS_MASK) >> 7);
+    printf("Status Register 3: WPS:  %d, DRV0: %d, DRV1: %d\n",
+        (device_info.status_register_3 & WB_STATUS_REGISTER_3_WPS_MASK) >> 2,
+        (device_info.status_register_3 & WB_STATUS_REGISTER_3_DRV0_MASK) >> 5,
+        (device_info.status_register_3 & WB_STATUS_REGISTER_3_DRV1_MASK) >> 6);
+
 
     const uint led = PICO_DEFAULT_LED_PIN;
     gpio_init(led);

@@ -52,6 +52,7 @@ int main()
     flash_context_t flash_context;
     _configure_flash_context(&flash_context);
     flash_spi_init(&flash_context);
+    flash_reset(&flash_context);
 
     const uint led = PICO_DEFAULT_LED_PIN;
     gpio_init(led);

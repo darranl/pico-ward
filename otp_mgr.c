@@ -129,6 +129,8 @@ static void init_main_menu(struct otp_mgr_context *context);
 static void init_generate_screen(struct otp_mgr_context *context);
 static void init_configure_screen(struct otp_mgr_context *context);
 static void init_system_information_screen(struct otp_mgr_context *context);
+static void init_otp_information_screen(struct otp_mgr_context *context);
+static void init_flash_information_screen(struct otp_mgr_context *context);
 static void init_change_pin_screen(struct otp_mgr_context *context);
 
 void otp_mgr_handle(struct vt102_event *event, void *context)
@@ -348,14 +350,7 @@ bool main_menu_handler(vt102_event *event, struct otp_mgr_context *context)
             init_configure_screen(context);
             return true;
         case 0x33:
-            if (pico_otp_configured(context->otp_core))
-            {
-                init_system_information_screen(context);
-            } else
-            {
-                struct base_screen_details *screen = context->screen;
-                screen->error_message = "OTP not configured";
-            }
+            init_system_information_screen(context);
             return true;
         case 0x34:
             init_change_pin_screen(context);
@@ -632,16 +627,80 @@ static void init_configure_screen(struct otp_mgr_context *context)
 
 bool system_information_screen_handler(vt102_event *event, struct otp_mgr_context *context)
 {
-    if (event->event_type == character && event->character == 0x71 || event->character == 0x51)
+    if (event->event_type == character)
     {
-        // Quit
-        init_main_menu(context);
-        return true;
+        switch (event->character)
+        {
+            case 0x31:
+                if (pico_otp_configured(context->otp_core))
+                {
+                    init_otp_information_screen(context);
+                } else
+                {
+                    struct base_screen_details *screen = context->screen;
+                    screen->error_message = "OTP not configured";
+                }
+                return true;
+            case 0x32:
+                // TODO Display Flash information.
+                break;
+            case 0x51:
+            case 0x71:
+                // Quit
+                init_main_menu(context);
+                return true;
+        }
     }
     return false;
 }
 
 void render_system_information_screen(struct otp_mgr_context *context)
+{
+    render_screen(context->screen);
+
+    vt102_cup("8", "10");
+    _vt102_write_str("1 - Show OTP Information");
+
+    vt102_cup("10", "10");
+    _vt102_write_str("2 - Show Flash Information");
+
+    vt102_cup("16", "10");
+    _vt102_write_str("Q - Quit");
+
+    vt102_cup("18", "10");
+    _vt102_write_str("[ ]");
+    vt102_cup("18", "11");
+}
+
+static void init_system_information_screen(struct otp_mgr_context *context)
+{
+    struct base_screen_details *screen = context->screen;
+    init_screen(screen);
+    screen->program_name = "Pico OATH";
+    screen->screen_name = "System Information";
+    screen->commands = "System Information";
+    screen->footer = "Taking control of your security.";
+    screen->handler = system_information_screen_handler;
+    screen->renderer = render_system_information_screen;
+}
+
+/*
+ * OTP Information Screen
+ */
+
+// Used by multiple information only screens to return.
+bool return_to_system_information_screen_handler(vt102_event *event, struct otp_mgr_context *context)
+{
+    if (event->event_type == character && event->character == 0x71 || event->character == 0x51)
+    {
+        // Quit
+        init_system_information_screen(context);
+        return true;
+    }
+    return false;
+}
+
+void render_otp_information_screen(struct otp_mgr_context *context)
 {
     render_screen(context->screen);
 
@@ -671,17 +730,22 @@ void render_system_information_screen(struct otp_mgr_context *context)
     vt102_cup("19", "11");
 }
 
-static void init_system_information_screen(struct otp_mgr_context *context)
+static void init_otp_information_screen(struct otp_mgr_context *context)
 {
     struct base_screen_details *screen = context->screen;
     init_screen(screen);
     screen->program_name = "Pico OATH";
-    screen->screen_name = "System Information";
-    screen->commands = "System Information";
+    screen->screen_name = "OTP Information";
+    screen->commands = "OTP Information";
     screen->footer = "Taking control of your security.";
-    screen->handler = system_information_screen_handler;
-    screen->renderer = render_system_information_screen;
+    screen->handler = return_to_system_information_screen_handler;
+    screen->renderer = render_otp_information_screen;
 }
+
+/*
+ * Flash Information Screen
+ */
+
 
 /*
  * Change PIN Screen

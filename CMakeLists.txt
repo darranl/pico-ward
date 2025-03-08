@@ -30,6 +30,7 @@ target_sources(pico-ward PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_LIST_DIR}/otp_mgr.c
         ${CMAKE_CURRENT_LIST_DIR}/pico_otp.c
+        flash/flash.c
         security/sha.S
         security/hmac.S
         security/hotp.S
@@ -49,6 +50,8 @@ pico_enable_stdio_usb(pico-ward 0)
 target_link_libraries(pico-ward PUBLIC
         pico_stdlib
         pico_unique_id
+        hardware_gpio
+        hardware_spi
         tinyusb_device
         tinyusb_board)
 

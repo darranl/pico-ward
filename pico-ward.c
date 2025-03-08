@@ -2,7 +2,7 @@
  *
  * This file is part of pico-ward.
  *
- * pico-sha-test is free software: you can redistribute it and/or modify it under the terms
+ * pico-ward is free software: you can redistribute it and/or modify it under the terms
  * of the GNU General Public License as published by the Free Software Foundation, either
  * version 3 of the License, or (at your option) any later version.
  *
@@ -16,17 +16,29 @@
 
 #include <stdio.h>
 
+#include "hardware_map.h"
 #include "otp_mgr.h"
 #include "pico_otp.h"
 #include "bsp/board.h"
 #include "tusb.h"
 #include "pico/stdlib.h"
 
+#include "flash/flash.h"
 #include "term/vt102.h"
 #include "term/terminal_buffer.h"
 #include "term/terminal_handler.h"
 #include "util/hexutil.h"
 
+static void _configure_flash_context(flash_context_t *flash_context)
+{
+    flash_context->spi = FLASH_SPI_BANK;
+    flash_context->tx_pin = FLASH_TX_GPIO;
+    flash_context->clk_pin = FLASH_CLK_GPIO;
+    flash_context->rx_pin = FLASH_RX_GPIO;
+    flash_context->hold_pin = FLASH_HOLD_GPIO;
+    flash_context->wp_pin = FLASH_WP_GPIO;
+    flash_context->cs_pin = FLASH_CS_GPIO;
+}
 
 int main()
 {
@@ -35,7 +47,11 @@ int main()
     // init device stack on configured roothub port
     tud_init(BOARD_TUD_RHPORT);
 
-    printf("\n\n\nHello World, welcome to my terminal playground !!!\n\n");
+    printf("\n\n\nHello World, welcome to pico-ward !!!\n\n");
+
+    flash_context_t flash_context;
+    _configure_flash_context(&flash_context);
+    flash_spi_init(&flash_context);
 
     const uint led = PICO_DEFAULT_LED_PIN;
     gpio_init(led);

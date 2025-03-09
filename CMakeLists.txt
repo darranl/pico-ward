@@ -30,6 +30,7 @@ target_sources(pico-ward PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_LIST_DIR}/otp_mgr.c
         ${CMAKE_CURRENT_LIST_DIR}/pico_otp.c
+        ${CMAKE_CURRENT_LIST_DIR}/storage.c
         flash/flash.c
         security/sha.S
         security/hmac.S

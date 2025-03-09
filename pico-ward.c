@@ -57,6 +57,12 @@ int main()
     flash_spi_init(&flash_context);
     flash_reset(&flash_context);
 
+    if (!flash_post_reset_test(&flash_context))
+    {
+        printf("Post Reset Test Failed\n");
+        return -1;
+    }
+
     const uint led = PICO_DEFAULT_LED_PIN;
     gpio_init(led);
     gpio_set_dir(led, GPIO_OUT);

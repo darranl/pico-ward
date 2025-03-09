@@ -769,15 +769,15 @@ void render_flash_information_screen(struct otp_mgr_context *context)
     _render_hex_byte(device_info.manufacturer_id);
 
     vt102_cup("11", "10");
-    _vt102_write_str("JDEC Manufacturer ID    : 0x");
+    _vt102_write_str("JEDEC Manufacturer ID   : 0x");
     _render_hex_byte(device_info.jedec_id[0]);
 
     vt102_cup("12", "10");
-    _vt102_write_str("JDEC Memory Type        : 0x");
+    _vt102_write_str("JEDEC Memory Type       : 0x");
     _render_hex_byte(device_info.jedec_id[1]);
 
     vt102_cup("13", "10");
-    _vt102_write_str("JDEC Capacity           : 0x");
+    _vt102_write_str("JEDEC Capacity          : 0x");
     _render_hex_byte(device_info.jedec_id[2]);
 
     char unique_id[17];

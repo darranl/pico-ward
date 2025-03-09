@@ -30,27 +30,7 @@
 #include "util/hexutil.h"
 
 
-// Status Register 1 Bit masks
-#define WB_STATUS_REGISTER_1_BUSY_MASK 0x01
-#define WB_STATUS_REGISTER_1_WEL_MASK 0x02
-#define WB_STATUS_REGISTER_1_BP0_MASK 0x04
-#define WB_STATUS_REGISTER_1_BP1_MASK 0x08
-#define WB_STATUS_REGISTER_1_BP2_MASK 0x10
-#define WB_STATUS_REGISTER_1_TB_MASK 0x20
-#define WB_STATUS_REGISTER_1_SEC_MASK 0x40
-#define WB_STATUS_REGISTER_1_SRP0_MASK 0x80
-// Status Register 2 Bit masks
-#define WB_STATUS_REGISTER_2_SRL_MASK 0x01
-#define WB_STATUS_REGISTER_2_QE_MASK 0x02
-#define WB_STATUS_REGISTER_2_LB1_MASK 0x08
-#define WB_STATUS_REGISTER_2_LB2_MASK 0x10
-#define WB_STATUS_REGISTER_2_LB3_MASK 0x20
-#define WB_STATUS_REGISTER_2_CMP_MASK 0x40
-#define WB_STATUS_REGISTER_2_SUS_MASK 0x80
-// Status Register 3 Bit masks
-#define WB_STATUS_REGISTER_3_WPS_MASK 0x04
-#define WB_STATUS_REGISTER_3_DRV0_MASK 0x20
-#define WB_STATUS_REGISTER_3_DRV1_MASK 0x40
+
 
 static void _configure_flash_context(flash_context_t *flash_context)
 {
@@ -126,7 +106,7 @@ int main()
     // This struct contains data such as the management pin and the HOTP secret / counter,
     // for now these are initialised as the program starts but later this data will be retrieved
     // from storage possibly on demand.
-    struct otp_core otp_core;
+    otp_core_t otp_core;
     // Clear the pin - TODO - This is a temporary measure to ensure the pin is cleared.
     for (i = 0; i < 9; i++)
     {
@@ -135,6 +115,8 @@ int main()
     otp_core.hotp_secret_length = 0;
 
     strncpy(otp_core.pin, "123456", 6);
+    // Further OTP Core Initialisation
+    otp_core.flash_context = &flash_context;
 
     while(true)
     {

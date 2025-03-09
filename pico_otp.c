@@ -64,3 +64,8 @@ void pico_otp_calculate(otp_core_t *otp_core, char *otp)
 
     otp_core->hotp_counter++;
 }
+
+void pico_otp_flash_device_info(otp_core_t *otp_core, flash_device_info_t *device_info)
+{
+    flash_load_device_info(otp_core->flash_context, device_info);
+}

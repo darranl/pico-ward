@@ -642,8 +642,8 @@ bool system_information_screen_handler(vt102_event *event, struct otp_mgr_contex
                 }
                 return true;
             case 0x32:
-                // TODO Display Flash information.
-                break;
+                init_flash_information_screen(context);
+                return true;
             case 0x51:
             case 0x71:
                 // Quit
@@ -723,7 +723,7 @@ void render_otp_information_screen(struct otp_mgr_context *context)
     _vt102_write_str(counter);
 
     vt102_cup("17", "10");
-    _vt102_write_str("Press Q to return to the main menu.");
+    _vt102_write_str("Press Q to return to the system information screen.");
 
     vt102_cup("19", "10");
     _vt102_write_str("[ ]");
@@ -744,8 +744,114 @@ static void init_otp_information_screen(struct otp_mgr_context *context)
 
 /*
  * Flash Information Screen
- */
+*/
 
+static void _render_hex_byte(uint8_t byte)
+{
+    char hex[3];
+    uint8_to_hex(byte, hex);
+    hex[2] = 0x00; // Guarantee the end.
+    _vt102_write_str(hex);
+}
+
+void render_flash_information_screen(struct otp_mgr_context *context)
+{
+    render_screen(context->screen);
+
+    flash_device_info_t device_info;
+    pico_otp_flash_device_info(context->otp_core, &device_info);
+
+    vt102_cup("8", "10");
+    _vt102_write_str("Flash Device Information");
+
+    vt102_cup("10", "10");
+    _vt102_write_str("Release Power Down ID   : 0x");
+    _render_hex_byte(device_info.manufacturer_id);
+
+    vt102_cup("11", "10");
+    _vt102_write_str("JDEC Manufacturer ID    : 0x");
+    _render_hex_byte(device_info.jedec_id[0]);
+
+    vt102_cup("12", "10");
+    _vt102_write_str("JDEC Memory Type        : 0x");
+    _render_hex_byte(device_info.jedec_id[1]);
+
+    vt102_cup("13", "10");
+    _vt102_write_str("JDEC Capacity           : 0x");
+    _render_hex_byte(device_info.jedec_id[2]);
+
+    char unique_id[17];
+    for (int i = 0; i < 8; i++)
+    {
+        uint8_to_hex(device_info.unique_id[i], &unique_id[i * 2]);
+    }
+    unique_id[16] = 0x00; // Guarantee the end.
+
+    vt102_cup("14", "10");
+    _vt102_write_str("Unique ID               : ");
+    _vt102_write_str(unique_id);
+
+    char register_string[150];
+    sprintf(register_string, "Status Register 1: BUSY: %d, WEL:  %d, BP0:  %d, BP1:  %d, BP2:  %d, TB:   %d, SEC:  %d,",
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BUSY_MASK) >> 0,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_WEL_MASK) >> 1,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BP0_MASK) >> 2,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BP1_MASK) >> 3,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_BP2_MASK) >> 4,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_TB_MASK) >> 5,
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_SEC_MASK) >> 6
+        );
+
+    vt102_cup("16", "10");
+    _vt102_write_str(register_string);
+
+    sprintf(register_string, "SRP0: %d",
+        (device_info.status_register_1 & WB_STATUS_REGISTER_1_SRP0_MASK) >> 7
+        );
+
+    vt102_cup("17", "29");
+    _vt102_write_str(register_string);
+
+    sprintf(register_string, "Status Register 2: SRL:  %d, QE:   %d, LB1:  %d, LB2:  %d, LB3:  %d, CMP:  %d, SUS:  %d",
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_SRL_MASK) >> 0,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_QE_MASK) >> 1,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_LB1_MASK) >> 3,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_LB2_MASK) >> 4,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_LB3_MASK) >> 5,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_CMP_MASK) >> 6,
+        (device_info.status_register_2 & WB_STATUS_REGISTER_2_SUS_MASK) >> 7);
+
+    vt102_cup("18", "10");
+    _vt102_write_str(register_string);
+
+    sprintf(register_string, "Status Register 3: WPS:  %d, DRV0: %d, DRV1: %d",
+        (device_info.status_register_3 & WB_STATUS_REGISTER_3_WPS_MASK) >> 2,
+        (device_info.status_register_3 & WB_STATUS_REGISTER_3_DRV0_MASK) >> 5,
+        (device_info.status_register_3 & WB_STATUS_REGISTER_3_DRV1_MASK) >> 6);
+
+    vt102_cup("19", "10");
+    _vt102_write_str(register_string);
+
+    vt102_cup("21", "10");
+    _vt102_write_str("Press Q to return to the system information screen.");
+
+    vt102_cup("23", "10");
+    _vt102_write_str("[ ]");
+    vt102_cup("23", "11");
+ }
+
+
+static void init_flash_information_screen(struct otp_mgr_context *context)
+{
+    struct base_screen_details *screen = context->screen;
+    init_screen(screen);
+    screen->program_name = "Pico OATH";
+    screen->screen_name = "Flash Information";
+    screen->commands = "OTP Information";
+    screen->footer = "Taking control of your security.";
+    screen->handler = return_to_system_information_screen_handler;
+    screen->renderer = render_flash_information_screen;
+}
 
 /*
  * Change PIN Screen

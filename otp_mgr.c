@@ -79,11 +79,20 @@ struct configure_screen_handler
     uint8_t otp_secret_length;
 };
 
+struct read_flash_screen
+{
+    struct base_screen_details base_screen_details;
+    char flash_address[6];
+    uint8_t entered_address[3];
+    bool display_data;
+};
+
 union screens
 {
     struct login_screen login_screen;
     struct change_pin_screen change_pin_screen;
     struct configure_screen_handler configure_screen_handler;
+    struct read_flash_screen read_flash_screen;
 };
 
 /*
@@ -132,6 +141,7 @@ static void init_system_information_screen(struct otp_mgr_context *context);
 static void init_otp_information_screen(struct otp_mgr_context *context);
 static void init_flash_information_screen(struct otp_mgr_context *context);
 static void init_change_pin_screen(struct otp_mgr_context *context);
+static void init_read_flash_screen(struct otp_mgr_context *context);
 
 void otp_mgr_handle(struct vt102_event *event, void *context)
 {
@@ -644,6 +654,9 @@ bool system_information_screen_handler(vt102_event *event, struct otp_mgr_contex
             case 0x32:
                 init_flash_information_screen(context);
                 return true;
+            case 0x33:
+                init_read_flash_screen(context);
+                return true;
             case 0x51:
             case 0x71:
                 // Quit
@@ -663,6 +676,9 @@ void render_system_information_screen(struct otp_mgr_context *context)
 
     vt102_cup("10", "10");
     _vt102_write_str("2 - Show Flash Information");
+
+    vt102_cup("12", "10");
+    _vt102_write_str("3 - Read Flash Data");
 
     vt102_cup("16", "10");
     _vt102_write_str("Q - Quit");
@@ -979,5 +995,84 @@ static void init_change_pin_screen(struct otp_mgr_context *context)
         change_pin_screen->new_pin[i] = 0x00;
         change_pin_screen->confirm_pin[i] = 0x00;
     }
+}
+
+bool read_flash_screen_handler(vt102_event *event, struct otp_mgr_context *context)
+{
+    if (event->event_type == character && event->character == 0x71 || event->character == 0x51)
+    {
+        // Quit
+        init_system_information_screen(context);
+        return true;
+    }
+
+    return false;
+}
+
+static void read_flash_calculate_cursor_position(struct cursor_position *cursor_position, uint8_t index)
+{
+    cursor_position->row = index / 32;
+    cursor_position->column = index % 32;
+}
+
+void render_read_flash_screen(struct otp_mgr_context *context)
+{
+    render_screen(context->screen);
+
+    vt102_cup("8", "10");
+    _vt102_write_str("Please enter the address to read from and press <ENTER>");
+    vt102_cup("10", "10");
+    _vt102_write_str("Address: 0x");
+    for (int i = 0; i < 6; i++)
+    {
+        _vt102_write_char('-');
+    }
+
+    vt102_cup("13", "10");
+    _vt102_write_str("Displaying Address: 0x------");
+
+    struct cursor_position origin_position = {
+        15, 10
+    };
+
+    struct cursor_position actual_position;
+    for (int i = 0 ; i < 256 ; i++)
+    {
+        if (i % 32 == 0)
+        {
+            read_flash_calculate_cursor_position(&actual_position, i);
+            set_cursor_position(&actual_position, &origin_position);
+        }
+
+        _vt102_write_char('-');
+    }
+
+    vt102_cup("25", "10");
+    _vt102_write_str("Press Q to return to the system information screen.");
+
+    vt102_cup("10", "21");
+}
+
+static void init_read_flash_screen(struct otp_mgr_context *context)
+{
+    struct base_screen_details *screen = context->screen;
+    init_screen(screen);
+    screen->program_name = "Pico OATH";
+    screen->screen_name = "Read Flash";
+    screen->commands = "Read Flash";
+    screen->footer = "Taking control of your security.";
+    screen->handler = read_flash_screen_handler;
+    screen->renderer = render_read_flash_screen;
+
+    struct read_flash_screen *read_flash_screen = context->screen;
+    // Clear the entered address.
+    for (int i = 0; i < 6; i++) {
+        read_flash_screen->flash_address[i] = 0x00;
+    }
+    // Clear the display data bool.
+    read_flash_screen->display_data = false;
+    // We don't need to clear the entered address as on used once
+    // display data is true AND that only happens after user has
+    // set the address and pressed enter.
 }
 

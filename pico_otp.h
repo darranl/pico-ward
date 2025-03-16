@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "storage.h"
 #include "flash/flash.h"
 
 struct otp_core
@@ -30,6 +31,7 @@ struct otp_core
     uint8_t hotp_secret_length;
     uint64_t hotp_counter;
     flash_context_t *flash_context;  // Maybe later we will make the storage more abstract.
+    storage_context_t *storage_context; // This should become the primary mechanism to interact with storage.
 };
 
 typedef struct otp_core otp_core_t;

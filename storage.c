@@ -14,7 +14,38 @@
  * If  not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h> // TODO Remove Later If Not Needed
+
 #include "storage.h"
 #include "storage_address_map.h"
 
+static char header[8] = "PICOWARD";
+
+static void _storage_output_header(char *header)
+{
+    printf("Header: ");
+    for (int i = 0; i < 8; i++)
+    {
+        printf("%02x", header[i]);
+    }
+    printf("\n");
+}
+
+void storage_begin(storage_context_t *context, flash_context_t *flash_context)
+{
+    // The two headers are only written to storage after the pre-requisite
+    // minimal data has been written.
+    //
+    // Unless both headers are present the storage is considered uninitialised.
+    char header_a[8];
+    char header_b[8];
+
+    flash_read_data(flash_context, HEADER_A, header_a, 8);
+    _storage_output_header(header_a);
+    flash_read_data(flash_context, HEADER_B, header_b, 8);
+    _storage_output_header(header_b);
+
+    context->flash_context = flash_context;
+    context->initialised = false;
+}
 

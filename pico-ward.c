@@ -20,6 +20,7 @@
 #include "otp_mgr.h"
 #include "pico_otp.h"
 #include "bsp/board.h"
+#include "storage.h"
 #include "tusb.h"
 #include "pico/stdlib.h"
 
@@ -62,6 +63,11 @@ int main()
         printf("Post Reset Test Failed\n");
         return -1;
     }
+
+    storage_context_t storage_context;
+    storage_begin(&storage_context, &flash_context);
+    printf("Storage Initialised = %d\n", storage_context.initialised);
+
 
     const uint led = PICO_DEFAULT_LED_PIN;
     gpio_init(led);

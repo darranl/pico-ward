@@ -15,6 +15,7 @@
 */
 
 #include <stdio.h> // TODO Remove Later If Not Needed
+#include <string.h>
 
 #include "storage.h"
 #include "storage_address_map.h"
@@ -46,6 +47,7 @@ void storage_begin(storage_context_t *context, flash_context_t *flash_context)
     _storage_output_header(header_b);
 
     context->flash_context = flash_context;
-    context->initialised = false;
+    context->initialised = strncmp(header_a, header, 8) == 0 &&
+                            strncmp(header_b, header, 8) == 0;
 }
 

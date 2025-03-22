@@ -1001,6 +1001,7 @@ static void init_change_pin_screen(struct otp_mgr_context *context)
 bool read_flash_screen_handler(vt102_event *event, struct otp_mgr_context *context)
 {
     char current = 0x00;
+    struct read_flash_screen *read_flash_screen = context->screen;
     if (event->event_type == character && event->character == 0x71 || event->character == 0x51)
     {
         // Quit
@@ -1008,18 +1009,30 @@ bool read_flash_screen_handler(vt102_event *event, struct otp_mgr_context *conte
         return true;
     }
     else if (event->event_type == character &&
-        ((event->character >= 0x30 && event->character <= 0x39) || (event->character >= 0x41 && event->character <= 0x5A))
+        ((event->character >= 0x30 && event->character <= 0x39) || (event->character >= 0x41 && event->character <= 0x46))
         )
     {
         current = event->character;
     }
-    else if (event->event_type == character && event->character >= 0x61 && event->character <= 0x7A)
+    else if (event->event_type == character && event->character >= 0x61 && event->character <= 0x66)
     {
         current = event->character - 0x20; // Convert to upper case.
     }
+    else if (read_flash_screen->display_data && event->event_type == character && (event->character == 0x4E || event->character == 0x6E))
+    {
+        // Next page.
+        uint32_t address = 0x00 | read_flash_screen->entered_address[0] << 16 |
+            read_flash_screen->entered_address[1] << 8 |
+            read_flash_screen->entered_address[2];
+        address += 256;
+        read_flash_screen->entered_address[0] = (address >> 16) & 0xFF; // Three Address Bytes
+        read_flash_screen->entered_address[1] = (address >> 8) & 0xFF;
+        read_flash_screen->entered_address[2] = (address) & 0xFF;
+
+        return true;
+    }
     else if (event->event_type == control && event->character == 0x4D)
     {
-        struct read_flash_screen *read_flash_screen = context->screen;
         if (read_flash_screen->flash_address_length != 6)
         {
             struct base_screen_details *screen = context->screen;
@@ -1040,7 +1053,6 @@ bool read_flash_screen_handler(vt102_event *event, struct otp_mgr_context *conte
         return true;
     }
 
-    struct read_flash_screen *read_flash_screen = context->screen;
     // We know current was only set to valid HEX characters above.
     if (current != 0x00 && read_flash_screen->flash_address_length < 6)
     {
@@ -1051,12 +1063,6 @@ bool read_flash_screen_handler(vt102_event *event, struct otp_mgr_context *conte
     }
 
     return false;
-}
-
-static void read_flash_calculate_cursor_position(struct cursor_position *cursor_position, uint8_t index)
-{
-    cursor_position->row = index / 32;
-    cursor_position->column = index % 32;
 }
 
 void render_read_flash_screen(struct otp_mgr_context *context)
@@ -1081,7 +1087,7 @@ void render_read_flash_screen(struct otp_mgr_context *context)
         }
     }
 
-    vt102_cup("13", "10");
+    vt102_cup("12", "10");
     _vt102_write_str("Displaying Address: 0x");
     if (read_flash_screen->display_data)
     {
@@ -1098,23 +1104,92 @@ void render_read_flash_screen(struct otp_mgr_context *context)
         _vt102_write_str("------");
     }
 
-    struct cursor_position origin_position = {
-        15, 10
-    };
-
-    struct cursor_position actual_position;
-    for (int i = 0 ; i < 256 ; i++)
+    uint8_t data[256];
+    uint32_t address = 0x00;
+    if (read_flash_screen->display_data)
     {
-        if (i % 32 == 0)
-        {
-            read_flash_calculate_cursor_position(&actual_position, i);
-            set_cursor_position(&actual_position, &origin_position);
-        }
+        address = 0x00 | read_flash_screen->entered_address[0] << 16 |
+            read_flash_screen->entered_address[1] << 8 |
+            read_flash_screen->entered_address[2];
 
-        _vt102_write_char('-');
+        pico_otp_flash_read_data(context->otp_core, address, data, 256);
     }
 
-    vt102_cup("25", "10");
+    struct cursor_position actual_position;
+    for (int row = 0; row < 16; row++)
+    {
+        uint8_t display_row = 14 + row;
+        char row_string[3];
+        sprintf(row_string, "%d", display_row);
+        vt102_cup(row_string, "5");
+
+        if (read_flash_screen->display_data)
+        {
+            char row_address[9];
+            uint32_to_hex(address + row * 16, row_address);
+            row_address[8] = 0x00;
+            printf("Row Address: %s\n", row_address);
+            _vt102_write_str(&row_address[2]);
+        }
+        else
+        {
+            _vt102_write_str("------");
+        }
+        _vt102_write_str("  ");
+
+        for (int column = 0; column < 16; column++)
+        {
+            uint8_t index = row * 16 + column;
+            if (index < 256)
+            {
+                if (read_flash_screen->display_data)
+                {
+                    uint8_t byte = data[index];
+                    _render_hex_byte(byte);
+                    _vt102_write_str(" ");
+                }
+                else
+                {
+                    _vt102_write_str("-- ");
+                }
+            }
+            if (column == 7)
+            {
+                _vt102_write_str(" ");
+            }
+        }
+        _vt102_write_str(" |");
+        for (int column = 0; column < 16; column++)
+        {
+            uint8_t index = row * 16 + column;
+            if (index < 256)
+            {
+                uint8_t byte = data[index];
+                if (read_flash_screen->display_data && byte >= 0x20 && byte <= 0x7E)
+                {
+                    _vt102_write_char(byte);
+                }
+                else
+                {
+                    _vt102_write_char('.');
+                }
+            }
+            else
+            {
+                _vt102_write_char(' ');
+            }
+        }
+        _vt102_write_str("|");
+        _vt102_write_flush();
+    }
+
+    if (read_flash_screen->display_data)
+    {
+        vt102_cup("31", "10");
+        _vt102_write_str("Press N for next page.");
+    }
+
+    vt102_cup("32", "10");
     _vt102_write_str("Press Q to return to the system information screen.");
 
     uint8_t column = 21 + read_flash_screen->flash_address_length;

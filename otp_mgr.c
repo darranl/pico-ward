@@ -83,6 +83,7 @@ struct read_flash_screen
 {
     struct base_screen_details base_screen_details;
     char flash_address[6];
+    uint8_t flash_address_length;
     uint8_t entered_address[3];
     bool display_data;
 };
@@ -999,11 +1000,54 @@ static void init_change_pin_screen(struct otp_mgr_context *context)
 
 bool read_flash_screen_handler(vt102_event *event, struct otp_mgr_context *context)
 {
+    char current = 0x00;
     if (event->event_type == character && event->character == 0x71 || event->character == 0x51)
     {
         // Quit
         init_system_information_screen(context);
         return true;
+    }
+    else if (event->event_type == character &&
+        ((event->character >= 0x30 && event->character <= 0x39) || (event->character >= 0x41 && event->character <= 0x5A))
+        )
+    {
+        current = event->character;
+    }
+    else if (event->event_type == character && event->character >= 0x61 && event->character <= 0x7A)
+    {
+        current = event->character - 0x20; // Convert to upper case.
+    }
+    else if (event->event_type == control && event->character == 0x4D)
+    {
+        struct read_flash_screen *read_flash_screen = context->screen;
+        if (read_flash_screen->flash_address_length != 6)
+        {
+            struct base_screen_details *screen = context->screen;
+            screen->error_message = "Incomplete memory address entered";
+            read_flash_screen->display_data = false;
+        }
+        else
+        {
+            read_flash_screen->base_screen_details.error_message = NULL;
+            for (int i = 0; i < 3; i++)
+            {
+                read_flash_screen->entered_address[i] = hex_to_char(&read_flash_screen->flash_address[i * 2]);
+            }
+            read_flash_screen->flash_address_length = 0; // Start new entry.
+            read_flash_screen->display_data = true;
+        }
+
+        return true;
+    }
+
+    struct read_flash_screen *read_flash_screen = context->screen;
+    // We know current was only set to valid HEX characters above.
+    if (current != 0x00 && read_flash_screen->flash_address_length < 6)
+    {
+        read_flash_screen->flash_address[read_flash_screen->flash_address_length] = current;
+        read_flash_screen->flash_address_length++;
+        _vt102_write_char(current);
+        _vt102_write_flush();
     }
 
     return false;
@@ -1023,13 +1067,36 @@ void render_read_flash_screen(struct otp_mgr_context *context)
     _vt102_write_str("Please enter the address to read from and press <ENTER>");
     vt102_cup("10", "10");
     _vt102_write_str("Address: 0x");
+
+    struct read_flash_screen *read_flash_screen = context->screen;
     for (int i = 0; i < 6; i++)
     {
-        _vt102_write_char('-');
+        if (i < read_flash_screen->flash_address_length)
+        {
+            _vt102_write_char(read_flash_screen->flash_address[i]);
+        }
+        else
+        {
+            _vt102_write_char('-');
+        }
     }
 
     vt102_cup("13", "10");
-    _vt102_write_str("Displaying Address: 0x------");
+    _vt102_write_str("Displaying Address: 0x");
+    if (read_flash_screen->display_data)
+    {
+        char address[7];
+        for (int i = 0; i < 3; i++)
+        {
+            uint8_to_hex(read_flash_screen->entered_address[i], &address[i * 2]);
+        }
+        address[6] = 0x00;
+        _vt102_write_str(address);
+    }
+    else
+    {
+        _vt102_write_str("------");
+    }
 
     struct cursor_position origin_position = {
         15, 10
@@ -1050,7 +1117,10 @@ void render_read_flash_screen(struct otp_mgr_context *context)
     vt102_cup("25", "10");
     _vt102_write_str("Press Q to return to the system information screen.");
 
-    vt102_cup("10", "21");
+    uint8_t column = 21 + read_flash_screen->flash_address_length;
+    char column_string[3];
+    sprintf(column_string, "%d", column);
+    vt102_cup("10", column_string);
 }
 
 static void init_read_flash_screen(struct otp_mgr_context *context)
@@ -1069,6 +1139,7 @@ static void init_read_flash_screen(struct otp_mgr_context *context)
     for (int i = 0; i < 6; i++) {
         read_flash_screen->flash_address[i] = 0x00;
     }
+    read_flash_screen->flash_address_length = 0;
     // Clear the display data bool.
     read_flash_screen->display_data = false;
     // We don't need to clear the entered address as on used once

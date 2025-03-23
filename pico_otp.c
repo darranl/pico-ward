@@ -77,8 +77,12 @@ bool pico_otp_storage_initialised(otp_core_t *otp_core)
 
 void pico_otp_reset_storage(otp_core_t *otp_core, bool initialise)
 {
-    // TODO - Implement
     printf("Resetting Storage initialise=%d\n", initialise);
+    flash_chip_erase(otp_core->flash_context);
+
+    // Run storage_begin again as this will test if storage is correctly
+    // initialised.
+    //storage_begin(otp_core->storage_context, otp_core->flash_context);
 }
 
 void pico_otp_flash_read_data(otp_core_t *otp_core, uint32_t address, uint8_t *data, uint32_t length)

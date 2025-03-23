@@ -36,4 +36,9 @@ typedef struct storage_context storage_context_t;
 */
 void storage_begin(storage_context_t *context, flash_context_t *flash_context);
 
+/*
+ * Has the underlying storage been initialised?
+*/
+bool storage_initialised(storage_context_t *context);
+
 #endif // STORAGE_H

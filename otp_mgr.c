@@ -850,11 +850,15 @@ void render_flash_information_screen(struct otp_mgr_context *context)
     _vt102_write_str(register_string);
 
     vt102_cup("21", "10");
-    _vt102_write_str("Press Q to return to the system information screen.");
+    _vt102_write_str("Storage Initialised : ");
+    _vt102_write_str(pico_otp_storage_initialised(context->otp_core) ? "Yes" : "No");
 
     vt102_cup("23", "10");
+    _vt102_write_str("Press Q to return to the system information screen.");
+
+    vt102_cup("25", "10");
     _vt102_write_str("[ ]");
-    vt102_cup("23", "11");
+    vt102_cup("25", "11");
  }
 
 

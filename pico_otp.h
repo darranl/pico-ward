@@ -48,6 +48,24 @@ void pico_otp_calculate(otp_core_t *otp_core, char *otp);
 
 void pico_otp_flash_device_info(otp_core_t *otp_core, flash_device_info_t *device_info);
 
+/*
+ * Has the underlying storage been initialised?
+*/
+bool pico_otp_storage_initialised(otp_core_t *otp_core);
+
+/*
+ * Wipe the underlying storage.
+ *
+ * If initialise is true the storage will be re-initialised.
+*/
+void pico_otp_reset_storage(otp_core_t *otp_core, bool initialise);
+
+/*
+ * Read data from flash at the specified address.
+ *
+ * This function is probably too low level and knowledge about the use of flash should
+ * not be exposed here.
+ */
 void pico_otp_flash_read_data(otp_core_t *otp_core, uint32_t address, uint8_t *data, uint32_t length);
 
 #endif // OTP_H

@@ -51,3 +51,8 @@ void storage_begin(storage_context_t *context, flash_context_t *flash_context)
                             strncmp(header_b, header, 8) == 0;
 }
 
+bool storage_initialised(storage_context_t *context)
+{
+    return context->initialised;
+}
+

@@ -70,6 +70,16 @@ void pico_otp_flash_device_info(otp_core_t *otp_core, flash_device_info_t *devic
     flash_load_device_info(otp_core->flash_context, device_info);
 }
 
+bool pico_otp_storage_initialised(otp_core_t *otp_core)
+{
+    return storage_initialised(otp_core->storage_context);
+}
+
+void pico_otp_reset_storage(otp_core_t *otp_core, bool initialise)
+{
+    // TODO - Implement
+}
+
 void pico_otp_flash_read_data(otp_core_t *otp_core, uint32_t address, uint8_t *data, uint32_t length)
 {
     printf("Reading from address 0x%08x\n", address);

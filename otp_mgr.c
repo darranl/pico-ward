@@ -87,6 +87,11 @@ struct read_flash_screen
     uint8_t entered_address[3];
     bool display_data;
 };
+struct reset_storage_screen
+{
+    struct base_screen_details base_screen_details;
+    bool confirm_reset;
+};
 
 union screens
 {
@@ -94,6 +99,7 @@ union screens
     struct change_pin_screen change_pin_screen;
     struct configure_screen_handler configure_screen_handler;
     struct read_flash_screen read_flash_screen;
+    struct reset_storage_screen reset_storage_screen;
 };
 
 /*
@@ -143,6 +149,7 @@ static void init_otp_information_screen(struct otp_mgr_context *context);
 static void init_flash_information_screen(struct otp_mgr_context *context);
 static void init_change_pin_screen(struct otp_mgr_context *context);
 static void init_read_flash_screen(struct otp_mgr_context *context);
+static void init_reset_storage_screen(struct otp_mgr_context *context);
 
 void otp_mgr_handle(struct vt102_event *event, void *context)
 {
@@ -658,6 +665,9 @@ bool system_information_screen_handler(vt102_event *event, struct otp_mgr_contex
             case 0x33:
                 init_read_flash_screen(context);
                 return true;
+            case 0x34:
+                init_reset_storage_screen(context);
+                return true;
             case 0x51:
             case 0x71:
                 // Quit
@@ -681,12 +691,15 @@ void render_system_information_screen(struct otp_mgr_context *context)
     vt102_cup("12", "10");
     _vt102_write_str("3 - Read Flash Data");
 
-    vt102_cup("16", "10");
-    _vt102_write_str("Q - Quit");
+    vt102_cup("14", "10");
+    _vt102_write_str("4 - Reset Storage");
 
     vt102_cup("18", "10");
+    _vt102_write_str("Q - Quit");
+
+    vt102_cup("20", "10");
     _vt102_write_str("[ ]");
-    vt102_cup("18", "11");
+    vt102_cup("20", "11");
 }
 
 static void init_system_information_screen(struct otp_mgr_context *context)
@@ -1224,5 +1237,112 @@ static void init_read_flash_screen(struct otp_mgr_context *context)
     // We don't need to clear the entered address as on used once
     // display data is true AND that only happens after user has
     // set the address and pressed enter.
+}
+
+/*
+ * Reset Storage Screen
+*/
+
+bool reset_storage_screen_handler(vt102_event *event, struct otp_mgr_context *context)
+{
+    bool is_quit = false;
+    struct reset_storage_screen *reset_storage_screen = context->screen;
+    // As a simple confirmation screen we are only interested
+    // in character input.
+    if (event->event_type == character)
+    {
+        if (event->character == 'q' || event->character == 'Q')
+        {
+            is_quit = true;
+        }
+        else if (reset_storage_screen->confirm_reset &&
+            (event->character == 'y' || event->character == 'Y' ||
+                event->character == 'n' || event->character == 'N'))
+        {
+            // We are definately proceeding with the reset.
+            bool initialise = event->character == 'y' || event->character == 'Y';
+            pico_otp_reset_storage(context->otp_core, initialise);
+            // Handle as quit to return to menu.
+            is_quit = true;
+        } else {
+            printf("Character: %c\n", event->character);
+            // Only interested in Y or N.
+            // Other characters are ignored.
+            switch (event->character)
+            {
+                case 'y':
+                case 'Y':
+                    reset_storage_screen->confirm_reset = true;
+                    return true;
+                case 'n':
+                case 'N':
+                    is_quit = true;
+                    break;
+            }
+        }
+    }
+
+    if (is_quit)
+    {
+        init_system_information_screen(context);
+        return true;
+    }
+
+    return false;
+}
+
+void render_reset_storage_screen(struct otp_mgr_context *context)
+{
+    render_screen(context->screen);
+    struct reset_storage_screen *reset_storage_screen = context->screen;
+
+    vt102_cup("8", "10");
+    _vt102_write_str("Reset Storage");
+
+    if (reset_storage_screen->confirm_reset)
+    {
+        vt102_cup("12", "10");
+        _vt102_write_str("Do you also want to initialise the storage?");
+
+        vt102_cup("14", "10");
+        _vt102_write_str("Press Y to confirm, N to reset only.");
+
+        vt102_cup("15", "10");
+        _vt102_write_str("Press Q to abort and return to the previous menu.");
+
+        vt102_cup("17", "10");
+        _vt102_write_str("[ ]");
+        vt102_cup("17", "11");
+    }
+    else
+    {
+        vt102_cup("10", "10");
+        _vt102_write_str("WARNING: This will reset all OTP data and the PIN.");
+
+        vt102_cup("12", "10");
+        _vt102_write_str("Are you sure you want to reset the storage?");
+
+        vt102_cup("14", "10");
+        _vt102_write_str("Press Y to confirm, N to cancel.");
+
+        vt102_cup("16", "10");
+        _vt102_write_str("[ ]");
+        vt102_cup("16", "11");
+    }
+}
+
+static void init_reset_storage_screen(struct otp_mgr_context *context)
+{
+    struct base_screen_details *screen = context->screen;
+    init_screen(screen);
+    screen->program_name = "Pico OATH";
+    screen->screen_name = "Storage Reset";
+    screen->commands = "Storage Reset";
+    screen->footer = "Taking control of your security.";
+    screen->handler = reset_storage_screen_handler;
+    screen->renderer = render_reset_storage_screen;
+
+    struct reset_storage_screen *reset_storage_screen = context->screen;
+    reset_storage_screen->confirm_reset = false;
 }
 

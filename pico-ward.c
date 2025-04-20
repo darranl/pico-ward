@@ -37,17 +37,6 @@
 #include "term/terminal_handler.h"
 #include "util/hexutil.h"
 
-static void _configure_flash_context(flash_context_t *flash_context)
-{
-    flash_context->spi = FLASH_SPI_BANK;
-    flash_context->tx_pin = FLASH_TX_GPIO;
-    flash_context->clk_pin = FLASH_CLK_GPIO;
-    flash_context->rx_pin = FLASH_RX_GPIO;
-    flash_context->hold_pin = FLASH_HOLD_GPIO;
-    flash_context->wp_pin = FLASH_WP_GPIO;
-    flash_context->cs_pin = FLASH_CS_GPIO;
-}
-
 int main()
 {
     board_init();
@@ -77,6 +66,10 @@ int main()
     // Phase 2 - Begin each component.
     //           At this stage the components may interact to complete their
     //           initialisation routines.
+    //
+    //           Components should not assume other components are completly
+    //           ready until we reach the run stage but this stage can be
+    //           used to check default state / register callbacks etc...
     bool success = true;
     // 1. OTP Admin (USB Admin Interface)
     success = success && otp_admin_begin(&otp_context);
@@ -114,24 +107,6 @@ int main()
         otp_main_run(&otp_context);
     }
 
-    flash_context_t flash_context;
-    _configure_flash_context(&flash_context);
-    flash_spi_init(&flash_context);
-    flash_reset(&flash_context);
-
-    if (!flash_post_reset_test(&flash_context))
-    {
-        printf("Post Reset Test Failed\n");
-        return -1;
-    }
-
-    storage_context_t storage_context;
-    storage_begin(&storage_context, &flash_context);
-    printf("Storage Initialised = %d\n", storage_context.initialised);
-
-
-
-
     uint32_t i;
 
     // This struct contains data such as the management pin and the HOTP secret / counter,
@@ -147,7 +122,7 @@ int main()
 
     strncpy(otp_core.pin, "123456", 6);
     // Further OTP Core Initialisation
-    otp_core.flash_context = &flash_context;
+    otp_core.flash_context = otp_storage_get_flash_context(&otp_context);
 
     while(true)
     {

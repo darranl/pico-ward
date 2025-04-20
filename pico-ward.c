@@ -107,23 +107,6 @@ int main()
         otp_main_run(&otp_context);
     }
 
-    uint32_t i;
-
-    // This struct contains data such as the management pin and the HOTP secret / counter,
-    // for now these are initialised as the program starts but later this data will be retrieved
-    // from storage possibly on demand.
-    otp_core_t otp_core;
-    // Clear the pin - TODO - This is a temporary measure to ensure the pin is cleared.
-    for (i = 0; i < 9; i++)
-    {
-        otp_core.pin[i] = 0x00;
-    }
-    otp_core.hotp_secret_length = 0;
-
-    strncpy(otp_core.pin, "123456", 6);
-    // Further OTP Core Initialisation
-    otp_core.flash_context = otp_storage_get_flash_context(&otp_context);
-
     while(true)
     {
         tud_task(); // This is always needed in the outer loop so we can detect a connect event.
@@ -132,7 +115,7 @@ int main()
         {
             // For now assume CDC mode is a dedicated setup mode.
             //gpio_put(led, true);
-            otp_mgr_begin(&otp_core);
+            //otp_mgr_begin(&otp_core);
             //gpio_put(led, false);
         }
     }

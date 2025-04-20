@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "otp_mgr.h"
@@ -109,28 +110,42 @@ struct otp_mgr_context
 {
     otp_core_t *otp_core;
     void* screen;
+    void *terminal_handler_context;
 };
 
 
 static void otp_mgr_handle(vt102_event *event, void *context);
 
-/**
- * Begins the OTP Manager by initializing the OTP Manager context and calling the terminal handler.
- *
- * @param otp_core A pointer to the OTP core structure.
- */
-void otp_mgr_begin(otp_core_t *otp_core)
+void* otp_mgr_init()
 {
-    // This context will contain the state for the OTP Manager, it will be passed back in
-    // on every event.  Although this currently uses a linear call stack later the context
-    // could be passed back in for independently firing events.
-    union screens screens;
-    struct otp_mgr_context otp_mgr_context;
-    otp_mgr_context.screen = &screens;
-    otp_mgr_context.otp_core = otp_core;
+    struct otp_mgr_context *otp_mgr_context = malloc(sizeof(struct otp_mgr_context));
 
-    terminal_handler(&otp_mgr_handle, &otp_mgr_context);
+    union screens *screens = malloc(sizeof(union screens));
+
+    // Initialise the context.
+    otp_mgr_context->otp_core = NULL;
+    otp_mgr_context->screen = screens;
+
+    otp_mgr_context->terminal_handler_context = terminal_handler_init();
+
+    return otp_mgr_context;
 }
+
+bool otp_mgr_beginII(void *otp_mgr_context, otp_core_t *otp_core)
+{
+    struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
+    context->otp_core = otp_core;
+
+    terminal_handler_begin(context->terminal_handler_context, otp_mgr_handle, context);
+
+    return true;
+}
+void otp_mgr_run(void *otp_mgr_context)
+{
+    struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
+    terminal_handler_run(context->terminal_handler_context);
+}
+
 
 void handle_disconnected()
 {

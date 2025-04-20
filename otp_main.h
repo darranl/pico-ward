@@ -20,6 +20,7 @@
 #define OTP_MAIN_H
 
 #include "otp_context.h"
+#include "pico_otp.h"
 
 #include <stdbool.h>
 
@@ -44,5 +45,7 @@ bool otp_main_begin(otp_context_t *otp_context);
  * called in the main loop of the program.
  */
 void otp_main_run(otp_context_t *otp_context);
+
+otp_core_t* otp_main_get_otp_core(otp_context_t *otp_context);
 
 #endif // OTP_MAIN_H

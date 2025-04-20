@@ -67,3 +67,10 @@ void otp_main_run(otp_context_t *otp_context)
     struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
 
 }
+
+otp_core_t* otp_main_get_otp_core(otp_context_t *otp_context)
+{
+    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+
+    return &context->otp_core;
+}

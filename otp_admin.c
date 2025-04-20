@@ -18,9 +18,12 @@
 #include <stdbool.h>
 
 #include "otp_context.h"
+#include "otp_main.h"
+#include "otp_mgr.h"
 
 struct otp_admin_context
 {
+    void *otp_mgr_context;
 
 };
 
@@ -28,6 +31,7 @@ void* otp_admin_init()
 {
     struct otp_admin_context *context = malloc(sizeof(struct otp_admin_context));
 
+    context->otp_mgr_context = otp_mgr_init();
     return context;
 
 }
@@ -36,11 +40,14 @@ bool otp_admin_begin(otp_context_t *otp_context)
 {
     struct otp_admin_context *context = (struct otp_admin_context*)otp_context->otp_admin_context;
 
+    otp_core_t *otp_core = otp_main_get_otp_core(otp_context);
+    otp_mgr_beginII(context->otp_mgr_context, otp_core);
+
     return true;
 }
 
 void otp_admin_run(otp_context_t *otp_context)
 {
     struct otp_admin_context *context = (struct otp_admin_context*)otp_context->otp_admin_context;
-
+    otp_mgr_run(context->otp_mgr_context);
 }

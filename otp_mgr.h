@@ -21,13 +21,14 @@
 #ifndef OTP_MGR_H
 #define OTP_MGR_H
 
+#include <stdbool.h>
+
 #include "pico_otp.h"
 #include "term/vt102.h"
 
-
-
-void otp_mgr_begin(otp_core_t *otp_core);
-
+void* otp_mgr_init();
+bool otp_mgr_beginII(void *otp_mgr_context, otp_core_t *otp_core);
+void otp_mgr_run(void *otp_mgr_context);
 
 #endif // OTP_MGR_H
 

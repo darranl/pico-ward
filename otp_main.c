@@ -1,4 +1,4 @@
-/* Copyright 2024, Darran A Lofthouse
+/* Copyright 2025, Darran A Lofthouse
  *
  * This file is part of pico-ward.
  *
@@ -12,22 +12,35 @@
  *
  * You should have received a copy of the GNU General Public License along with pico-ward.
  * If  not, see <https://www.gnu.org/licenses/>.
- */
+*/
 
-/*
- * The OTP Manager provides a simple interface to manage the Pico OTP runtime.
- */
+#include <stdlib.h>
+#include <stdbool.h>
 
-#ifndef OTP_MGR_H
-#define OTP_MGR_H
+#include "otp_context.h"
 
-#include "pico_otp.h"
-#include "term/vt102.h"
+struct otp_main_context
+{
 
+};
 
+void* otp_main_init()
+{
+    struct otp_main_context *context = malloc(sizeof(struct otp_main_context));
 
-void otp_mgr_begin(otp_core_t *otp_core);
+    return context;
 
+}
 
-#endif // OTP_MGR_H
+bool otp_main_begin(otp_context_t *otp_context)
+{
+    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
 
+    return true;
+}
+
+void otp_main_run(otp_context_t *otp_context)
+{
+    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+
+}

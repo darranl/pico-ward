@@ -36,6 +36,8 @@ struct otp_core
 
 typedef struct otp_core otp_core_t;
 
+
+
 bool pico_otp_validate_pin(otp_core_t *otp_core, char *pin);
 
 void pico_otp_set_pin(otp_core_t *otp_core, char *pin);

@@ -28,7 +28,13 @@ add_executable(pico-ward)
 target_sources(pico-ward PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/pico-ward.c
         ${CMAKE_CURRENT_LIST_DIR}/usb_descriptors.c
+        ${CMAKE_CURRENT_LIST_DIR}/otp_admin.c
+        ${CMAKE_CURRENT_LIST_DIR}/otp_display.c
+        ${CMAKE_CURRENT_LIST_DIR}/otp_input.c
+        ${CMAKE_CURRENT_LIST_DIR}/otp_main.c
         ${CMAKE_CURRENT_LIST_DIR}/otp_mgr.c
+        ${CMAKE_CURRENT_LIST_DIR}/otp_status.c
+        ${CMAKE_CURRENT_LIST_DIR}/otp_storage.c
         ${CMAKE_CURRENT_LIST_DIR}/pico_otp.c
         ${CMAKE_CURRENT_LIST_DIR}/storage.c
         flash/flash.c

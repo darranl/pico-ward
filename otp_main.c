@@ -17,13 +17,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "otp_context.h"
 #include "otp_storage.h"
 #include "pico_otp.h" // TODO Will this component replase pico_otp?
 
+#define OTP_MAIN_CONTEXT_ID 0xAF
 struct otp_main_context
 {
+    char id;
     otp_core_t otp_core;
 
 };
@@ -31,6 +34,7 @@ struct otp_main_context
 void* otp_main_init()
 {
     struct otp_main_context *context = malloc(sizeof(struct otp_main_context));
+    context->id = OTP_MAIN_CONTEXT_ID;
 
     uint32_t i;
 
@@ -54,6 +58,11 @@ void* otp_main_init()
 bool otp_main_begin(otp_context_t *otp_context)
 {
     struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+    if (context->id != OTP_MAIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_main_begin 0x%02x\n", context->id);
+        return false;
+    }
 
     otp_core_t *otp_core = &context->otp_core;
     // Further OTP Core Initialisation
@@ -65,6 +74,12 @@ bool otp_main_begin(otp_context_t *otp_context)
 void otp_main_run(otp_context_t *otp_context)
 {
     struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+    if (context->id != OTP_MAIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_main_run 0x%02x\n", context->id);
+        return;
+    }
+
 
 }
 

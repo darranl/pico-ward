@@ -23,8 +23,10 @@
 #include "otp_context.h"
 #include "storage.h" // TODO Should merge here.
 
+#define OTP_STORAGE_CONTEXT_ID 0xB1
 struct otp_storage_context
 {
+    char id;
     flash_context_t flash_context;
     bool flash_initialised;
     storage_context_t storage_context;
@@ -35,6 +37,7 @@ static void _configure_flash_context(flash_context_t *flash_context);
 void* otp_storage_init()
 {
     struct otp_storage_context *context = malloc(sizeof(struct otp_storage_context));
+    context->id = OTP_STORAGE_CONTEXT_ID;
 
     _configure_flash_context(&context->flash_context);
     flash_spi_init(&context->flash_context);
@@ -54,6 +57,12 @@ void* otp_storage_init()
 bool otp_storage_begin(otp_context_t *otp_context)
 {
     struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
+    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_storage_begin 0x%02x\n", context->id);
+        return false;
+    }
+
     if (!context->flash_initialised)
     {
         printf("Flash not initialised\n");
@@ -66,12 +75,23 @@ bool otp_storage_begin(otp_context_t *otp_context)
 void otp_storage_run(otp_context_t *otp_context)
 {
     struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
+    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_storage_run 0x%02x\n", context->id);
+        return;
+    }
 
 }
 
 flash_context_t* otp_storage_get_flash_context(otp_context_t *otp_context)
 {
     struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
+    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_storage_get_flash_context 0x%02x\n", context->id);
+        return NULL;
+    }
+
     return &context->flash_context;
 }
 

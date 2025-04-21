@@ -16,19 +16,23 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "otp_context.h"
 
 #include "hardware/gpio.h"
 
+#define OTP_STATUS_CONTEXT_ID 0xB0
 struct otp_status_context
 {
+    char id;
     uint led;
 };
 
 void* otp_status_init()
 {
     struct otp_status_context *context = malloc(sizeof(struct otp_status_context));
+    context->id = OTP_STATUS_CONTEXT_ID;
 
     context->led = PICO_DEFAULT_LED_PIN;
     gpio_init(context->led);
@@ -41,6 +45,11 @@ void* otp_status_init()
 bool otp_status_begin(otp_context_t *otp_context)
 {
     struct otp_status_context *context = (struct otp_status_context*)otp_context->otp_status_context;
+    if (context->id != OTP_STATUS_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_status_begin 0x%02x\n", context->id);
+        return false;
+    }
 
     return true;
 }
@@ -48,5 +57,10 @@ bool otp_status_begin(otp_context_t *otp_context)
 void otp_status_run(otp_context_t *otp_context)
 {
     struct otp_status_context *context = (struct otp_status_context*)otp_context->otp_status_context;
+    if (context->id != OTP_STATUS_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_status_run 0x%02x\n", context->id);
+        return;
+    }
 
 }

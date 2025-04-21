@@ -16,17 +16,21 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "otp_context.h"
 
+#define OTP_DISPLAY_CONTEXT_ID 0xAD
 struct otp_display_context
 {
+    char id;
 
 };
 
 void* otp_display_init()
 {
     struct otp_display_context *context = malloc(sizeof(struct otp_display_context));
+    context->id = OTP_DISPLAY_CONTEXT_ID;
 
     return context;
 
@@ -35,6 +39,11 @@ void* otp_display_init()
 bool otp_display_begin(otp_context_t *otp_context)
 {
     struct otp_display_context *context = (struct otp_display_context*)otp_context->primary_display_context;
+    if (context->id != OTP_DISPLAY_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_display_begin 0x%02x\n", context->id);
+        return false;
+    }
 
     return true;
 }
@@ -42,5 +51,10 @@ bool otp_display_begin(otp_context_t *otp_context)
 void otp_display_run(otp_context_t *otp_context)
 {
     struct otp_display_context *context = (struct otp_display_context*)otp_context->primary_display_context;
+    if (context->id != OTP_DISPLAY_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_display_run 0x%02x\n", context->id);
+        return;
+    }
 
 }

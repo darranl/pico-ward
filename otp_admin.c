@@ -16,13 +16,16 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "otp_context.h"
 #include "otp_main.h"
 #include "otp_mgr.h"
 
+#define OTP_ADMIN_CONTEXT_ID 0xAB
 struct otp_admin_context
 {
+    char id;
     void *otp_mgr_context;
 
 };
@@ -30,6 +33,7 @@ struct otp_admin_context
 void* otp_admin_init()
 {
     struct otp_admin_context *context = malloc(sizeof(struct otp_admin_context));
+    context->id = OTP_ADMIN_CONTEXT_ID;
 
     context->otp_mgr_context = otp_mgr_init();
     return context;
@@ -39,6 +43,11 @@ void* otp_admin_init()
 bool otp_admin_begin(otp_context_t *otp_context)
 {
     struct otp_admin_context *context = (struct otp_admin_context*)otp_context->otp_admin_context;
+    if (context->id != OTP_ADMIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_admin_begin 0x%02x\n", context->id);
+        return false;
+    }
 
     otp_core_t *otp_core = otp_main_get_otp_core(otp_context);
     otp_mgr_beginII(context->otp_mgr_context, otp_core);
@@ -49,5 +58,11 @@ bool otp_admin_begin(otp_context_t *otp_context)
 void otp_admin_run(otp_context_t *otp_context)
 {
     struct otp_admin_context *context = (struct otp_admin_context*)otp_context->otp_admin_context;
+    if (context->id != OTP_ADMIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_admin_run 0x%02x\n", context->id);
+        return;
+    }
+
     otp_mgr_run(context->otp_mgr_context);
 }

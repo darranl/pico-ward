@@ -103,11 +103,14 @@ union screens
     struct reset_storage_screen reset_storage_screen;
 };
 
+#define OTP_MGR_CONTEXT_ID 0xAC
+
 /*
  * For now this will contain a union to allocate the space for the largest screen type.
  */
 struct otp_mgr_context
 {
+    char id;
     otp_core_t *otp_core;
     void* screen;
     void *terminal_handler_context;
@@ -119,6 +122,7 @@ static void otp_mgr_handle(vt102_event *event, void *context);
 void* otp_mgr_init()
 {
     struct otp_mgr_context *otp_mgr_context = malloc(sizeof(struct otp_mgr_context));
+    otp_mgr_context->id = OTP_MGR_CONTEXT_ID;
 
     union screens *screens = malloc(sizeof(union screens));
 
@@ -134,6 +138,12 @@ void* otp_mgr_init()
 bool otp_mgr_beginII(void *otp_mgr_context, otp_core_t *otp_core)
 {
     struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
+    if (context->id != OTP_MGR_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_mgr_beginII 0x%02x\n", context->id);
+        return false;
+    }
+
     context->otp_core = otp_core;
 
     terminal_handler_begin(context->terminal_handler_context, otp_mgr_handle, context);
@@ -143,6 +153,12 @@ bool otp_mgr_beginII(void *otp_mgr_context, otp_core_t *otp_core)
 void otp_mgr_run(void *otp_mgr_context)
 {
     struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
+    if (context->id != OTP_MGR_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_mgr_run 0x%02x\n", context->id);
+        return;
+    }
+
     terminal_handler_run(context->terminal_handler_context);
 }
 

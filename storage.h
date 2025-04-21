@@ -21,9 +21,10 @@
 
 #include "flash/flash.h"
 
-
+#define STORAGE_CONTEXT_ID 0xB3
 struct storage_context
 {
+    char id;
     flash_context_t *flash_context;
     bool initialised;
 

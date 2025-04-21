@@ -35,6 +35,7 @@ void* otp_main_init()
 {
     struct otp_main_context *context = malloc(sizeof(struct otp_main_context));
     context->id = OTP_MAIN_CONTEXT_ID;
+    context->otp_core.id = OTP_CORE_CONTEXT_ID;
 
     uint32_t i;
 
@@ -67,6 +68,7 @@ bool otp_main_begin(otp_context_t *otp_context)
     otp_core_t *otp_core = &context->otp_core;
     // Further OTP Core Initialisation
     otp_core->flash_context = otp_storage_get_flash_context(otp_context);
+    otp_core->storage_context = otp_storage_get_storage_context(otp_context);
 
     return true;
 }

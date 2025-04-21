@@ -34,6 +34,12 @@ static void _storage_output_header(char *header)
 
 void storage_begin(storage_context_t *context, flash_context_t *flash_context)
 {
+    if (context->id != STORAGE_CONTEXT_ID)
+    {
+        printf("Invalid context passed to storage_begin 0x%02x\n", context->id);
+        return;
+    }
+
     // The two headers are only written to storage after the pre-requisite
     // minimal data has been written.
     //
@@ -53,6 +59,12 @@ void storage_begin(storage_context_t *context, flash_context_t *flash_context)
 
 bool storage_initialised(storage_context_t *context)
 {
+    if (context->id != STORAGE_CONTEXT_ID)
+    {
+        printf("Invalid context passed to storage_initialised 0x%02x\n", context->id);
+        return false;
+    }
+
     return context->initialised;
 }
 

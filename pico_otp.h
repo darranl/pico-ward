@@ -23,8 +23,10 @@
 #include "storage.h"
 #include "flash/flash.h"
 
+#define OTP_CORE_CONTEXT_ID 0xB2
 struct otp_core
 {
+    char id;
     char pin[9]; // 8 characters plus null terminator.
     // OTP Data
     uint8_t hotp_secret[20];

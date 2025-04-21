@@ -24,6 +24,7 @@
 #include <stdbool.h>
 
 #include "flash/flash.h" // TODO TEMP Remove
+#include "storage.h" // TODO TEMP Remove
 
 /*
  * This function initialises the OTP storage component.
@@ -49,5 +50,6 @@ void otp_storage_run(otp_context_t *otp_context);
 
 // TODO TEMP REMOVE
 flash_context_t* otp_storage_get_flash_context(otp_context_t *otp_context);
+storage_context_t* otp_storage_get_storage_context(otp_context_t *otp_context);
 
 #endif // OTP_STORAGE_H

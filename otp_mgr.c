@@ -185,6 +185,14 @@ static void init_reset_storage_screen(struct otp_mgr_context *context);
 void otp_mgr_handle(struct vt102_event *event, void *context)
 {
     struct otp_mgr_context *otp_mgr_context = (struct otp_mgr_context *)context;
+    static bool warned = false;
+    if (otp_mgr_context->id != OTP_MGR_CONTEXT_ID && !warned)
+    {
+        printf("Invalid context passed to otp_mgr_handle 0x%02x\n", otp_mgr_context->id);
+        warned = true;
+        return;
+    }
+
     bool redraw = false;
     switch (event->event_type)
     {

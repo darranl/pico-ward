@@ -107,18 +107,7 @@ int main()
         otp_main_run(&otp_context);
     }
 
-    while(true)
-    {
-        tud_task(); // This is always needed in the outer loop so we can detect a connect event.
-
-        if (tud_cdc_n_connected(CDC_INTF))
-        {
-            // For now assume CDC mode is a dedicated setup mode.
-            //gpio_put(led, true);
-            //otp_mgr_begin(&otp_core);
-            //gpio_put(led, false);
-        }
-    }
+    printf("Exiting main loop\n");
 }
 
 

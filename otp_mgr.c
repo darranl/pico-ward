@@ -135,12 +135,12 @@ void* otp_mgr_init()
     return otp_mgr_context;
 }
 
-bool otp_mgr_beginII(void *otp_mgr_context, otp_core_t *otp_core)
+bool otp_mgr_begin(void *otp_mgr_context, otp_core_t *otp_core)
 {
     struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
     if (context->id != OTP_MGR_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_mgr_beginII 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_mgr_begin 0x%02x\n", context->id);
         return false;
     }
 

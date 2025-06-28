@@ -50,7 +50,7 @@ bool otp_admin_begin(otp_context_t *otp_context)
     }
 
     otp_core_t *otp_core = otp_main_get_otp_core(otp_context);
-    otp_mgr_beginII(context->otp_mgr_context, otp_core);
+    otp_mgr_begin(context->otp_mgr_context, otp_core);
 
     return true;
 }

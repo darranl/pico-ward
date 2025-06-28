@@ -58,7 +58,7 @@ void* otp_main_init()
 
 bool otp_main_begin(otp_context_t *otp_context)
 {
-    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_main_context;
     if (context->id != OTP_MAIN_CONTEXT_ID)
     {
         printf("Invalid context passed to otp_main_begin 0x%02x\n", context->id);
@@ -75,7 +75,7 @@ bool otp_main_begin(otp_context_t *otp_context)
 
 void otp_main_run(otp_context_t *otp_context)
 {
-    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_main_context;
     if (context->id != OTP_MAIN_CONTEXT_ID)
     {
         printf("Invalid context passed to otp_main_run 0x%02x\n", context->id);
@@ -87,7 +87,7 @@ void otp_main_run(otp_context_t *otp_context)
 
 otp_core_t* otp_main_get_otp_core(otp_context_t *otp_context)
 {
-    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_core_context;
+    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_main_context;
 
     return &context->otp_core;
 }

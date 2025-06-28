@@ -61,7 +61,7 @@ int main()
     // 5. User Input (Buttons / Rotary Encoders)
     otp_context.user_input_context = otp_input_init();
     // 6. Pico OTP (Main OTP Core)
-    otp_context.otp_core_context = otp_main_init();
+    otp_context.otp_main_context = otp_main_init();
 
     // Phase 2 - Begin each component.
     //           At this stage the components may interact to complete their

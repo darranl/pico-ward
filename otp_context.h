@@ -31,7 +31,7 @@ struct otp_context
     void *storage_context;
     void *primary_display_context;
     void *user_input_context;
-    void *otp_core_context;
+    void *otp_main_context;
 };
 
 typedef struct otp_context otp_context_t;

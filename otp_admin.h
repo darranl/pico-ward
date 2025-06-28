@@ -45,4 +45,12 @@ bool otp_admin_begin(otp_context_t *otp_context);
  */
 void otp_admin_run(otp_context_t *otp_context);
 
+/**
+ * Notify OTP adming that some asynchronous event has occurred.
+ *
+ * The individual handler should check if it is waiting for something.
+ * If OTP Admin is not interested it will quietly be ignored.
+ */
+void otp_admin_notify(otp_context_t *otp_context);
+
 #endif // OTP_ADMIN_H

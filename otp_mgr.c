@@ -150,13 +150,19 @@ bool otp_mgr_begin(void *otp_mgr_context, otp_core_t *otp_core)
 
     return true;
 }
-void otp_mgr_run(void *otp_mgr_context)
+void otp_mgr_run(void *otp_mgr_context, bool with_event)
 {
     struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
     if (context->id != OTP_MGR_CONTEXT_ID)
     {
         printf("Invalid context passed to otp_mgr_run 0x%02x\n", context->id);
         return;
+    }
+
+    if (with_event)
+    {
+        // If we are running with an event then we need to trigger the terminal handler to process the event.
+        terminal_handler_trigger_event(context->terminal_handler_context);
     }
 
     terminal_handler_run(context->terminal_handler_context);

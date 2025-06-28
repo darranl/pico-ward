@@ -27,6 +27,7 @@ struct otp_admin_context
 {
     char id;
     void *otp_mgr_context;
+    bool handle_event_required;
 
 };
 
@@ -36,6 +37,7 @@ void* otp_admin_init()
     context->id = OTP_ADMIN_CONTEXT_ID;
 
     context->otp_mgr_context = otp_mgr_init();
+    context->handle_event_required = false;
     return context;
 
 }
@@ -64,5 +66,20 @@ void otp_admin_run(otp_context_t *otp_context)
         return;
     }
 
-    otp_mgr_run(context->otp_mgr_context);
+    otp_mgr_run(context->otp_mgr_context, context->handle_event_required);
+    context->handle_event_required = false; // Reset the flag after handling the event.
+}
+
+
+void otp_admin_notify(otp_context_t *otp_context)
+{
+    struct otp_admin_context *context = (struct otp_admin_context*)otp_context->otp_admin_context;
+    if (context->id != OTP_ADMIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_admin_notify 0x%02x\n", context->id);
+        return;
+    }
+
+    // Set the flag to indicate that an event needs to be handled.
+    context->handle_event_required = true;
 }

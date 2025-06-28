@@ -28,7 +28,7 @@
 
 void* otp_mgr_init();
 bool otp_mgr_begin(void *otp_mgr_context, otp_core_t *otp_core);
-void otp_mgr_run(void *otp_mgr_context);
+void otp_mgr_run(void *otp_mgr_context, bool with_event);
 
 #endif // OTP_MGR_H
 

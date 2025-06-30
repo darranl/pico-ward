@@ -19,10 +19,11 @@
 #ifndef OTP_MAIN_H
 #define OTP_MAIN_H
 
-#include "otp_context.h"
 #include "pico_otp.h"
 
 #include <stdbool.h>
+
+#include "pico_ward.h"
 
 /*
  * This function initialises the OTP main component.
@@ -30,7 +31,7 @@
  *
  * @returns A pointer to the OTP main context.
 */
-void* otp_main_init();
+otp_main_context_t* otp_main_init();
 
 /*
  * This function begins the OTP main indicator, it may rely on
@@ -38,14 +39,15 @@ void* otp_main_init();
  *
  * @returns true if the main component was successfully started, false otherwise.
 */
-bool otp_main_begin(otp_context_t *otp_context);
+bool otp_main_begin(pico_ward_context_t *pico_ward_context);
 
 /**
  * This is the main "run" handler for the main component, it will be
  * called in the main loop of the program.
  */
-void otp_main_run(otp_context_t *otp_context);
+void otp_main_run(otp_main_context_t *main_context);
 
-otp_core_t* otp_main_get_otp_core(otp_context_t *otp_context);
+// TODO - This will go - instead callers should obtain a reference to the context for OTP main.
+otp_core_t* otp_main_get_otp_core(otp_main_context_t *main_context);
 
 #endif // OTP_MAIN_H

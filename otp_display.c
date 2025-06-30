@@ -18,43 +18,45 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "otp_context.h"
+#include "pico_ward.h"
 
 #define OTP_DISPLAY_CONTEXT_ID 0xAD
-struct otp_display_context
+struct _otp_display_context
 {
-    char id;
+    struct common_context common_context;
 
 };
 
-void* otp_display_init()
+otp_display_context_t* otp_display_init()
 {
-    struct otp_display_context *context = malloc(sizeof(struct otp_display_context));
-    context->id = OTP_DISPLAY_CONTEXT_ID;
+    struct _otp_display_context *context = malloc(sizeof(struct _otp_display_context));
+    context->common_context.id = OTP_DISPLAY_CONTEXT_ID;
 
-    return context;
+    return (otp_display_context_t*) context;
 
 }
 
-bool otp_display_begin(otp_context_t *otp_context)
+bool otp_display_begin(pico_ward_context_t *pico_ward_context)
 {
-    struct otp_display_context *context = (struct otp_display_context*)otp_context->primary_display_context;
-    if (context->id != OTP_DISPLAY_CONTEXT_ID)
+    struct _otp_display_context *context = (struct _otp_display_context*) access_otp_display_context(pico_ward_context);
+    if (context->common_context.id != OTP_DISPLAY_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_display_begin 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_display_begin 0x%02x\n", context->common_context.id);
         return false;
     }
 
     return true;
 }
 
-void otp_display_run(otp_context_t *otp_context)
+void otp_display_run(otp_display_context_t *display_context)
 {
-    struct otp_display_context *context = (struct otp_display_context*)otp_context->primary_display_context;
-    if (context->id != OTP_DISPLAY_CONTEXT_ID)
+    if (display_context->id != OTP_DISPLAY_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_display_run 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_display_run 0x%02x\n", display_context->id);
         return;
     }
+
+    struct _otp_display_context *context = (struct _otp_display_context*)display_context;
+
 
 }

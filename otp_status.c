@@ -18,49 +18,50 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "otp_context.h"
-
 #include "hardware/gpio.h"
+#include "pico_ward.h"
 
 #define OTP_STATUS_CONTEXT_ID 0xB0
-struct otp_status_context
+struct _otp_status_context
 {
-    char id;
+    struct common_context common_context;
     uint led;
 };
 
-void* otp_status_init()
+otp_status_context_t* otp_status_init()
 {
-    struct otp_status_context *context = malloc(sizeof(struct otp_status_context));
-    context->id = OTP_STATUS_CONTEXT_ID;
+    struct _otp_status_context *context = malloc(sizeof(struct _otp_status_context));
+    context->common_context.id = OTP_STATUS_CONTEXT_ID;
 
     context->led = PICO_DEFAULT_LED_PIN;
     gpio_init(context->led);
     gpio_set_dir(context->led, GPIO_OUT);
     gpio_put(context->led, false);
 
-    return context;
+    return (otp_status_context_t*)context;
 }
 
-bool otp_status_begin(otp_context_t *otp_context)
+bool otp_status_begin(pico_ward_context_t *pico_ward_context)
 {
-    struct otp_status_context *context = (struct otp_status_context*)otp_context->otp_status_context;
-    if (context->id != OTP_STATUS_CONTEXT_ID)
+    struct _otp_status_context *context = (struct _otp_status_context*) access_otp_status_context(pico_ward_context);
+    if (context->common_context.id != OTP_STATUS_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_status_begin 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_status_begin 0x%02x\n", context->common_context.id);
         return false;
     }
 
     return true;
 }
 
-void otp_status_run(otp_context_t *otp_context)
+void otp_status_run(otp_status_context_t *status_context)
 {
-    struct otp_status_context *context = (struct otp_status_context*)otp_context->otp_status_context;
-    if (context->id != OTP_STATUS_CONTEXT_ID)
+    if (status_context->id != OTP_STATUS_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_status_run 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_status_run 0x%02x\n", status_context->id);
         return;
     }
+
+    struct _otp_status_context *context = (struct _otp_status_context*)status_context;
+
 
 }

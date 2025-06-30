@@ -19,9 +19,9 @@
 #ifndef OTP_DISPLAY_H
 #define OTP_DISPLAY_H
 
-#include "otp_context.h"
-
 #include <stdbool.h>
+
+#include "pico_ward.h"
 
 /*
  * This function initialises the OTP display component.
@@ -29,7 +29,7 @@
  *
  * @returns A pointer to the OTP display context.
 */
-void* otp_display_init();
+otp_display_context_t* otp_display_init();
 
 /*
  * This function begins the OTP display indicator, it may rely on
@@ -37,12 +37,12 @@ void* otp_display_init();
  *
  * @returns true if the display component was successfully started, false otherwise.
 */
-bool otp_display_begin(otp_context_t *otp_context);
+bool otp_display_begin(pico_ward_context_t *pico_ward_context);
 
 /**
  * This is the main "run" handler for the display component, it will be
  * called in the main loop of the program.
  */
-void otp_display_run(otp_context_t *otp_context);
+void otp_display_run(otp_display_context_t* otp_display_context);
 
 #endif // OTP_DISPLAY_H

@@ -18,7 +18,6 @@
 
 #include "hardware_map.h"
 #include "otp_admin.h"
-#include "otp_context.h"
 #include "otp_display.h"
 #include "otp_input.h"
 #include "otp_main.h"
@@ -26,6 +25,7 @@
 #include "otp_status.h"
 #include "otp_storage.h"
 #include "pico_otp.h"
+#include "pico_ward.h"
 #include "bsp/board.h"
 #include "storage.h"
 #include "tusb.h"
@@ -37,6 +37,17 @@
 #include "term/terminal_handler.h"
 #include "util/hexutil.h"
 
+struct _otp_context
+{
+    struct common_context common_context;
+    otp_admin_context_t *otp_admin_context;
+    otp_status_context_t *otp_status_context;
+    otp_storage_context_t *storage_context;
+    otp_display_context_t *primary_display_context;
+    otp_input_context_t *user_input_context;
+    otp_main_context_t *otp_main_context;
+};
+
 int main()
 {
     board_init();
@@ -45,7 +56,8 @@ int main()
     tud_init(BOARD_TUD_RHPORT);
 
     printf("\n\n\nHello World, welcome to pico-ward !!!\n\n");
-    otp_context_t otp_context;
+    struct _otp_context otp_context;
+    pico_ward_context_t *pico_ward_context = (pico_ward_context_t*)&otp_context;
 
     // Phase 1 - Initialise the contexts for the individual components.
     //           This is a first pass initialisation of components independent
@@ -72,17 +84,17 @@ int main()
     //           used to check default state / register callbacks etc...
     bool success = true;
     // 1. OTP Admin (USB Admin Interface)
-    success = success && otp_admin_begin(&otp_context);
+    success = success && otp_admin_begin(pico_ward_context);
     // 2. Status Indicator (LED(s))
-    success = success && otp_status_begin(&otp_context);
+    success = success && otp_status_begin(pico_ward_context);
     // 3. Storage (Flash)
-    success = success && otp_storage_begin(&otp_context);
+    success = success && otp_storage_begin(pico_ward_context);
     // 4. Primary Display (LED displays, 7-segment displays, etc)
-    success = success && otp_display_begin(&otp_context);
+    success = success && otp_display_begin(pico_ward_context);
     // 5. User Input (Buttons / Rotary Encoders)
-    success = success && otp_input_begin(&otp_context);
+    success = success && otp_input_begin(pico_ward_context);
     // 6. Pico OTP (Main OTP Core)
-    success = success && otp_main_begin(&otp_context);
+    success = success && otp_main_begin(pico_ward_context);
 
     if (!success)
     {
@@ -94,20 +106,56 @@ int main()
     while (true)
     {
         // 1. OTP Admin (USB Admin Interface)
-        otp_admin_run(&otp_context);
+        otp_admin_run(otp_context.otp_admin_context);
         // 2. Status Indicator (LED(s))
-        otp_status_run(&otp_context);
+        otp_status_run(otp_context.otp_status_context);
         // 3. Storage (Flash)
-        otp_storage_run(&otp_context);
+        otp_storage_run(otp_context.storage_context);
         // 4. Primary Display (LED displays, 7-segment displays, etc)
-        otp_display_run(&otp_context);
+        otp_display_run(otp_context.primary_display_context);
         // 5. User Input (Buttons / Rotary Encoders)
-        otp_input_run(&otp_context);
+        otp_input_run(otp_context.user_input_context);
         // 6. Pico OTP (Main OTP Core)
-        otp_main_run(&otp_context);
+        otp_main_run(otp_context.otp_main_context);
     }
 
     printf("Exiting main loop\n");
+}
+
+otp_admin_context_t* access_otp_admin_context(pico_ward_context_t *context)
+{
+    struct _otp_context *otp_context = (struct _otp_context*)context;
+    return otp_context->otp_admin_context;
+}
+
+otp_status_context_t* access_otp_status_context(pico_ward_context_t *context)
+{
+    struct _otp_context *otp_context = (struct _otp_context*)context;
+    return otp_context->otp_status_context;
+}
+
+otp_storage_context_t* access_otp_storage_context(pico_ward_context_t *context)
+{
+    struct _otp_context *otp_context = (struct _otp_context*)context;
+    return otp_context->storage_context;
+}
+
+otp_display_context_t* access_otp_display_context(pico_ward_context_t *context)
+{
+    struct _otp_context *otp_context = (struct _otp_context*)context;
+    return otp_context->primary_display_context;
+}
+
+otp_input_context_t* access_otp_input_context(pico_ward_context_t *context)
+{
+    struct _otp_context *otp_context = (struct _otp_context*)context;
+    return otp_context->user_input_context;
+}
+
+otp_main_context_t* access_otp_main_context(pico_ward_context_t *context)
+{
+    struct _otp_context *otp_context = (struct _otp_context*)context;
+    return otp_context->otp_main_context;
 }
 
 

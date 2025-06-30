@@ -19,9 +19,9 @@
 #ifndef OTP_ADMIN_H
 #define OTP_ADMIN_H
 
-#include "otp_context.h"
-
 #include <stdbool.h>
+
+#include "pico_ward.h"
 
 /*
  * This function initialises the OTP admin component.
@@ -29,7 +29,7 @@
  *
  * @returns A pointer to the OTP admin context.
 */
-void* otp_admin_init();
+otp_admin_context_t* otp_admin_init();
 
 /*
  * This function begins the OTP admin indicator, it may rely on
@@ -37,13 +37,13 @@ void* otp_admin_init();
  *
  * @returns true if the admin component was successfully started, false otherwise.
 */
-bool otp_admin_begin(otp_context_t *otp_context);
+bool otp_admin_begin(pico_ward_context_t *pico_ward_context);
 
 /**
  * This is the main "run" handler for the admin component, it will be
  * called in the main loop of the program.
  */
-void otp_admin_run(otp_context_t *otp_context);
+void otp_admin_run(otp_admin_context_t *admin_context);
 
 /**
  * Notify OTP adming that some asynchronous event has occurred.
@@ -51,6 +51,6 @@ void otp_admin_run(otp_context_t *otp_context);
  * The individual handler should check if it is waiting for something.
  * If OTP Admin is not interested it will quietly be ignored.
  */
-void otp_admin_notify(otp_context_t *otp_context);
+void otp_admin_notify(otp_admin_context_t *admin_context);
 
 #endif // OTP_ADMIN_H

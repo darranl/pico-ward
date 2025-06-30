@@ -19,22 +19,31 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "otp_context.h"
 #include "otp_storage.h"
-#include "pico_otp.h" // TODO Will this component replase pico_otp?
+#include "pico_otp.h" // TODO Will this component replase pico_otp? 20250628 Yes I think so.
+#include "pico_ward.h"
 
 #define OTP_MAIN_CONTEXT_ID 0xAF
-struct otp_main_context
+
+#define TASK_NONE = 0x00
+#define TASK_CHECK_PIN = 0x01
+
+struct _otp_main_context
 {
-    char id;
+    struct common_context common_context;
     otp_core_t otp_core;
 
 };
 
-void* otp_main_init()
+struct base_task
 {
-    struct otp_main_context *context = malloc(sizeof(struct otp_main_context));
-    context->id = OTP_MAIN_CONTEXT_ID;
+    uint8_t task_id; // The task ID.
+};
+
+otp_main_context_t* otp_main_init()
+{
+    struct _otp_main_context *context = malloc(sizeof(struct _otp_main_context));
+    context->common_context.id = OTP_MAIN_CONTEXT_ID;
     context->otp_core.id = OTP_CORE_CONTEXT_ID;
 
     uint32_t i;
@@ -53,41 +62,51 @@ void* otp_main_init()
 
     strncpy(otp_core->pin, "123456", 6);
 
-    return context;
+    return (otp_main_context_t*) context;
 }
 
-bool otp_main_begin(otp_context_t *otp_context)
+bool otp_main_begin(pico_ward_context_t *pico_ward_context)
 {
-    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_main_context;
-    if (context->id != OTP_MAIN_CONTEXT_ID)
+    struct _otp_main_context *context = (struct _otp_main_context*) access_otp_main_context(pico_ward_context);
+    if (context->common_context.id != OTP_MAIN_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_main_begin 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_main_begin 0x%02x\n", context->common_context.id);
         return false;
     }
 
+    otp_storage_context_t *storage_context = access_otp_storage_context(pico_ward_context);
+
     otp_core_t *otp_core = &context->otp_core;
     // Further OTP Core Initialisation
-    otp_core->flash_context = otp_storage_get_flash_context(otp_context);
-    otp_core->storage_context = otp_storage_get_storage_context(otp_context);
+    otp_core->flash_context = otp_storage_get_flash_context(storage_context);
+    otp_core->storage_context = otp_storage_get_storage_context(storage_context);
 
     return true;
 }
 
-void otp_main_run(otp_context_t *otp_context)
+void otp_main_run(otp_main_context_t *main_context)
 {
-    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_main_context;
-    if (context->id != OTP_MAIN_CONTEXT_ID)
+    if (main_context->id != OTP_MAIN_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_main_run 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_main_run 0x%02x\n", main_context->id);
         return;
     }
+
+    struct _otp_main_context *context = (struct _otp_main_context*)main_context;
+
 
 
 }
 
-otp_core_t* otp_main_get_otp_core(otp_context_t *otp_context)
+otp_core_t* otp_main_get_otp_core(otp_main_context_t *main_context)
 {
-    struct otp_main_context *context = (struct otp_main_context*)otp_context->otp_main_context;
+    if (main_context->id != OTP_MAIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_main_get_otp_core 0x%02x\n", main_context->id);
+        return 0x00;
+    }
+
+    struct _otp_main_context *context = (struct _otp_main_context*)main_context;
 
     return &context->otp_core;
 }

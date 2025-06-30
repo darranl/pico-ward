@@ -20,13 +20,13 @@
 
 #include "flash/flash.h"
 #include "hardware_map.h"
-#include "otp_context.h"
+#include "pico_ward.h"
 #include "storage.h" // TODO Should merge here.
 
 #define OTP_STORAGE_CONTEXT_ID 0xB1
-struct otp_storage_context
+struct _otp_storage_context
 {
-    char id;
+    struct common_context common_context;
     flash_context_t flash_context;
     bool flash_initialised;
     storage_context_t storage_context;
@@ -34,10 +34,10 @@ struct otp_storage_context
 
 static void _configure_flash_context(flash_context_t *flash_context);
 
-void* otp_storage_init()
+otp_storage_context_t* otp_storage_init()
 {
-    struct otp_storage_context *context = malloc(sizeof(struct otp_storage_context));
-    context->id = OTP_STORAGE_CONTEXT_ID;
+    struct _otp_storage_context *context = malloc(sizeof(struct _otp_storage_context));
+    context->common_context.id = OTP_STORAGE_CONTEXT_ID;
     context->storage_context.id = STORAGE_CONTEXT_ID;
 
     _configure_flash_context(&context->flash_context);
@@ -52,15 +52,15 @@ void* otp_storage_init()
         printf("Storage Initialised = %d\n", &context->storage_context.initialised);
     }
 
-    return context;
+    return (otp_storage_context_t*) context;
 }
 
-bool otp_storage_begin(otp_context_t *otp_context)
+bool otp_storage_begin(pico_ward_context_t *pico_ward_context)
 {
-    struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
-    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    struct _otp_storage_context *context = (struct _otp_storage_context*) access_otp_storage_context(pico_ward_context);
+    if (context->common_context.id != OTP_STORAGE_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_storage_begin 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_storage_begin 0x%02x\n", context->common_context.id);
         return false;
     }
 
@@ -73,37 +73,40 @@ bool otp_storage_begin(otp_context_t *otp_context)
     return true;
 }
 
-void otp_storage_run(otp_context_t *otp_context)
+void otp_storage_run(otp_storage_context_t *storage_context)
 {
-    struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
-    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    if (storage_context->id != OTP_STORAGE_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_storage_run 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_storage_run 0x%02x\n", storage_context->id);
         return;
     }
 
+    struct _otp_storage_context *context = (struct _otp_storage_context*)storage_context;
 }
 
-flash_context_t* otp_storage_get_flash_context(otp_context_t *otp_context)
+flash_context_t* otp_storage_get_flash_context(otp_storage_context_t *storage_context)
 {
-    struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
-    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    if (storage_context->id != OTP_STORAGE_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_storage_get_flash_context 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_storage_get_flash_context 0x%02x\n", storage_context->id);
         return NULL;
     }
+
+    struct _otp_storage_context *context = (struct _otp_storage_context*) storage_context;
+
 
     return &context->flash_context;
 }
 
-storage_context_t* otp_storage_get_storage_context(otp_context_t *otp_context)
+storage_context_t* otp_storage_get_storage_context(otp_storage_context_t *storage_context)
 {
-    struct otp_storage_context *context = (struct otp_storage_context*)otp_context->storage_context;
-    if (context->id != OTP_STORAGE_CONTEXT_ID)
+    if (storage_context->id != OTP_STORAGE_CONTEXT_ID)
     {
-        printf("Invalid context passed to otp_storage_get_storage_context 0x%02x\n", context->id);
+        printf("Invalid context passed to otp_storage_get_storage_context 0x%02x\n", storage_context->id);
         return NULL;
     }
+
+    struct _otp_storage_context *context = (struct _otp_storage_context*) storage_context;
 
     return &context->storage_context;
 }

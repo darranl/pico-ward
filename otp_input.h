@@ -19,9 +19,9 @@
 #ifndef OTP_INPUT_H
 #define OTP_INPUT_H
 
-#include "otp_context.h"
-
 #include <stdbool.h>
+
+#include "pico_ward.h"
 
 /*
  * This function initialises the OTP input component.
@@ -29,7 +29,7 @@
  *
  * @returns A pointer to the OTP input context.
 */
-void* otp_input_init();
+otp_input_context_t* otp_input_init();
 
 /*
  * This function begins the OTP input indicator, it may rely on
@@ -37,12 +37,12 @@ void* otp_input_init();
  *
  * @returns true if the input component was successfully started, false otherwise.
 */
-bool otp_input_begin(otp_context_t *otp_context);
+bool otp_input_begin(pico_ward_context_t *pico_ward_context);
 
 /**
  * This is the main "run" handler for the input component, it will be
  * called in the main loop of the program.
  */
-void otp_input_run(otp_context_t *otp_context);
+void otp_input_run(otp_input_context_t *input_context);
 
 #endif // OTP_INPUT_H

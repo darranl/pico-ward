@@ -20,9 +20,9 @@
 #ifndef OTP_STATUS_H
 #define OTP_STATUS_H
 
-#include "otp_context.h"
-
 #include <stdbool.h>
+
+#include "pico_ward.h"
 
 /*
  * This function initialises the OTP status indicator.
@@ -30,7 +30,7 @@
  *
  * @returns A pointer to the OTP status context.
 */
-void* otp_status_init();
+otp_status_context_t* otp_status_init();
 
 /*
  * This function begins the OTP status indicator, it may rely on
@@ -38,12 +38,12 @@ void* otp_status_init();
  *
  * @returns true if the status component was successfully started, false otherwise.
 */
-bool otp_status_begin(otp_context_t *otp_context);
+bool otp_status_begin(pico_ward_context_t *pico_ward_context);
 
 /**
  * This is the main "run" handler for the status component, it will be
  * called in the main loop of the program.
  */
-void otp_status_run(otp_context_t *otp_context);
+void otp_status_run(otp_status_context_t *status_context);
 
 #endif // OTP_STATUS_H

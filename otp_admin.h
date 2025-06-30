@@ -46,11 +46,22 @@ bool otp_admin_begin(pico_ward_context_t *pico_ward_context);
 void otp_admin_run(otp_admin_context_t *admin_context);
 
 /**
- * Notify OTP adming that some asynchronous event has occurred.
+ * Notify OTP admin that some asynchronous event has occurred.
  *
  * The individual handler should check if it is waiting for something.
  * If OTP Admin is not interested it will quietly be ignored.
  */
 void otp_admin_notify(otp_admin_context_t *admin_context);
+
+/**
+ * Handle a notification event.
+ *
+ * This function will be called by the underlying OTP manager to handle any
+ * previously received notification.
+ *
+ * Returns true if notify has been called, false otherwise. Calling this function
+ * clears the notification state.
+ */
+bool otp_admin_handle_notification(otp_admin_context_t *admin_context);
 
 #endif // OTP_ADMIN_H

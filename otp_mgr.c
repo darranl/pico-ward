@@ -18,7 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "otp_admin.h"
+#include "otp_main.h"
 #include "otp_mgr.h"
+#include "pico_otp.h"
 #include "term/terminal_handler.h"
 #include "term/vt102.h"
 #include "util/hexutil.h"
@@ -53,10 +56,19 @@ struct base_screen_details
     full_renderer renderer;
 };
 
+enum login_screen_state
+{
+    pin_entry,
+    validating,
+    valid,
+    invalid
+};
+
 struct login_screen
 {
     struct base_screen_details base_screen_details;
     char entered_pin[9];
+    enum login_screen_state state;
 };
 
 struct generate_otp_screen
@@ -94,6 +106,8 @@ struct reset_storage_screen
     bool confirm_reset;
 };
 
+// TODO We should add a check to verify we are on the screen we
+// expect to be on, especially with Callbacks etc...
 union screens
 {
     struct login_screen login_screen;
@@ -111,7 +125,10 @@ union screens
 struct otp_mgr_context
 {
     char id;
-    otp_core_t *otp_core;
+    // Contexts
+    otp_admin_context_t *otp_admin_context; // This is our context.
+    otp_main_context_t *otp_main_context; // The majority of our interaction will be through this context.
+    otp_core_t *otp_core; // TODO Will be Removed once no longer accesses.
     void* screen;
     void *terminal_handler_context;
 };
@@ -135,7 +152,8 @@ void* otp_mgr_init()
     return otp_mgr_context;
 }
 
-bool otp_mgr_begin(void *otp_mgr_context, otp_core_t *otp_core)
+bool otp_mgr_begin(void *otp_mgr_context, otp_admin_context_t *otp_admin,
+                    otp_main_context_t *otp_main, otp_core_t *otp_core)
 {
     struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
     if (context->id != OTP_MGR_CONTEXT_ID)
@@ -144,13 +162,15 @@ bool otp_mgr_begin(void *otp_mgr_context, otp_core_t *otp_core)
         return false;
     }
 
+    context->otp_admin_context = otp_admin;
+    context->otp_main_context = otp_main;
     context->otp_core = otp_core;
 
     terminal_handler_begin(context->terminal_handler_context, otp_mgr_handle, context);
 
     return true;
 }
-void otp_mgr_run(void *otp_mgr_context, bool with_event)
+void otp_mgr_run(void *otp_mgr_context)
 {
     struct otp_mgr_context *context = (struct otp_mgr_context *)otp_mgr_context;
     if (context->id != OTP_MGR_CONTEXT_ID)
@@ -159,7 +179,7 @@ void otp_mgr_run(void *otp_mgr_context, bool with_event)
         return;
     }
 
-    if (with_event)
+    if (otp_admin_handle_notification(context->otp_admin_context))
     {
         // If we are running with an event then we need to trigger the terminal handler to process the event.
         terminal_handler_trigger_event(context->terminal_handler_context);
@@ -312,46 +332,78 @@ void render_login_screen(struct otp_mgr_context *context)
     printf("Login screen sent.\n");
 }
 
-bool login_screen_handler(vt102_event *event, struct otp_mgr_context *context)
+void _handle_pin_validation_result(int result, void *handback)
 {
-    if (event->event_type == character && event->character >= 0x30 && event->character <= 0x39)
+    struct otp_mgr_context *context = (struct otp_mgr_context *)handback;
+    struct login_screen *login_screen = context->screen;
+
+    if (login_screen->state == validating)
     {
-        struct login_screen *login_screen = context->screen;
-        for (int i = 0; i < 8; i++)
-        {
-            if (login_screen->entered_pin[i] == 0x00)
-            {
-                login_screen->entered_pin[i] = event->character;
-                _vt102_write_char('*');
-                _vt102_write_flush();
-                break;
-            }
-        }
-    }
-    else if (event->event_type == control && event->character == 0x4D)
-    {
-        // Process the entered pin.
-        printf("Processing entered pin.\n");
-        struct login_screen *login_screen = context->screen;
-        if (pico_otp_validate_pin(context->otp_core, login_screen->entered_pin))
-        {
-            printf("PIN Valid\n");
-            init_main_menu(context);
-        }
-        else
-        {
-            printf("PIN Invalid\n");
-            struct base_screen_details *screen = context->screen;
-            screen->error_message = "Invalid PIN";
-        }
+        // Don't do anthing with the screens other than recore the state from the
+        // async call - calling notify means the event handler will be called to
+        // handle the result.
+        printf("PIN validation result: %d\n", result);
+        login_screen->state = result == 0 ? valid : invalid;
+        otp_admin_notify(context->otp_admin_context);
 
         // Clear the entered pin good or bad.
         for (int i = 0; i < 9; i++)
         {
             login_screen->entered_pin[i] = 0x00;
         }
+    }
+}
 
-        return true;
+bool login_screen_handler(vt102_event *event, struct otp_mgr_context *context)
+{
+    struct login_screen *login_screen = context->screen;
+    if (login_screen->state == pin_entry)
+    {
+        if (event->event_type == character && event->character >= 0x30 && event->character <= 0x39)
+        {
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (login_screen->entered_pin[i] == 0x00)
+                {
+                    login_screen->entered_pin[i] = event->character;
+                    _vt102_write_char('*');
+                    _vt102_write_flush();
+                    break;
+                }
+            }
+        }
+        else if (event->event_type == control && event->character == 0x4D)
+        {
+
+            // Process the entered pin.
+            printf("Processing entered pin.\n");
+            struct login_screen *login_screen = context->screen;
+
+            login_screen->state = validating;
+            otp_main_validate_pin(context->otp_main_context, login_screen->entered_pin,
+                _handle_pin_validation_result, context);
+        }
+    }
+    else if (event->event_type == none)
+    {
+        // We may have received an update for pin validation.
+        if (login_screen->state == valid)
+        {
+            printf("PIN Valid\n");
+            init_main_menu(context);
+
+            return true;
+        } else if (login_screen->state == invalid)
+        {
+            printf("PIN Invalid\n");
+            struct base_screen_details *screen = context->screen;
+            screen->error_message = "Invalid PIN";
+            login_screen->state = pin_entry;
+
+            return true;
+        }
+
     }
     return false;
 }
@@ -387,6 +439,7 @@ static void init_login_screen(struct otp_mgr_context *context)
     {
         login_screen->entered_pin[i] = 0x00;
     }
+    login_screen->state = pin_entry;
 }
 
 /*

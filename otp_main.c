@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "otp_main.h"
 #include "otp_storage.h"
 #include "pico_otp.h" // TODO Will this component replase pico_otp? 20250628 Yes I think so.
 #include "pico_ward.h"
@@ -28,16 +29,37 @@
 #define TASK_NONE = 0x00
 #define TASK_CHECK_PIN = 0x01
 
+
+enum task_id
+{
+    none = 0x00,
+    validate_pin = 0x01
+};
+struct base_task
+{
+    enum task_id task_id; // The task ID.
+    otp_main_callback callback; // The callback to call when the task is complete.
+    void *handback; // The handback to pass to the callback.
+};
+
+struct validate_pin_task
+{
+    struct base_task base_task; // The base task structure.
+    char *pin; // The pin to validate, 8 characters plus null terminator.
+};
+
+union main_task
+{
+    struct base_task base_task;
+    struct validate_pin_task validate_pin_task; // The validate pin task.
+
+};
+
 struct _otp_main_context
 {
     struct common_context common_context;
     otp_core_t otp_core;
-
-};
-
-struct base_task
-{
-    uint8_t task_id; // The task ID.
+    union main_task main_task;
 };
 
 otp_main_context_t* otp_main_init()
@@ -45,6 +67,7 @@ otp_main_context_t* otp_main_init()
     struct _otp_main_context *context = malloc(sizeof(struct _otp_main_context));
     context->common_context.id = OTP_MAIN_CONTEXT_ID;
     context->otp_core.id = OTP_CORE_CONTEXT_ID;
+    context->main_task.base_task.task_id = none; // Initialise the task ID to none.
 
     uint32_t i;
 
@@ -94,8 +117,33 @@ void otp_main_run(otp_main_context_t *main_context)
 
     struct _otp_main_context *context = (struct _otp_main_context*)main_context;
 
+    switch (context->main_task.base_task.task_id)
+    {
+        case none:
+            // No task to run.
+            break;
 
+        case validate_pin:
+            printf("Running validate pin task.\n");
+            // Validate the PIN.
+            if (pico_otp_validate_pin(&context->otp_core, context->main_task.validate_pin_task.pin))
+            {
+                // Call the callback with success.
+                context->main_task.validate_pin_task.base_task.callback(0, context->main_task.validate_pin_task.base_task.handback);
+            }
+            else
+            {
+                // Call the callback with failure.
+                context->main_task.validate_pin_task.base_task.callback(-1, context->main_task.validate_pin_task.base_task.handback);
+            }
+            // Clear the task ID.
+            context->main_task.base_task.task_id = none;
+            break;
 
+        default:
+            printf("Unknown task ID 0x%02x\n", context->main_task.base_task.task_id);
+            break;
+    }
 }
 
 otp_core_t* otp_main_get_otp_core(otp_main_context_t *main_context)
@@ -106,7 +154,30 @@ otp_core_t* otp_main_get_otp_core(otp_main_context_t *main_context)
         return 0x00;
     }
 
-    struct _otp_main_context *context = (struct _otp_main_context*)main_context;
+    struct _otp_main_context *context = (struct _otp_main_context*) main_context;
 
     return &context->otp_core;
+}
+
+bool otp_main_validate_pin(otp_main_context_t *main_context, char *pin, otp_main_callback callback, void *handback)
+{
+    if (main_context->id != OTP_MAIN_CONTEXT_ID)
+    {
+        printf("Invalid context passed to otp_main_validate_pin 0x%02x\n", main_context->id);
+        return false;
+    }
+
+    struct _otp_main_context *context = (struct _otp_main_context*) main_context;
+    if (context->main_task.base_task.task_id == none)
+    {
+        printf("Registering validate pin task.\n");
+        context->main_task.validate_pin_task.base_task.task_id = validate_pin;
+        context->main_task.validate_pin_task.base_task.callback = callback;
+        context->main_task.validate_pin_task.base_task.handback = handback;
+        context->main_task.validate_pin_task.pin = pin;
+
+        return true;
+    }
+
+    return false; // Validate PIN task was not registered.
 }

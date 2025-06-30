@@ -50,4 +50,11 @@ void otp_main_run(otp_main_context_t *main_context);
 // TODO - This will go - instead callers should obtain a reference to the context for OTP main.
 otp_core_t* otp_main_get_otp_core(otp_main_context_t *main_context);
 
+typedef void (*otp_main_callback)(int result, void *handback);
+
+// Main Functions for OTP main context.
+// These functions are all asynchronous so they should not block and
+// instead set up a task for the run loop.
+bool otp_main_validate_pin(otp_main_context_t *main_context, char *pin, otp_main_callback callback, void *handback);
+
 #endif // OTP_MAIN_H
